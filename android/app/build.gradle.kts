@@ -12,8 +12,8 @@ android {
         applicationId = "com.zirakusa.camara"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         // Modo MCP: the same public relay as the rest of the family (one device id per app). Empty = no MCP.
         val relayUrl = (project.findProperty("camaraRelayUrl") as String?).orEmpty().trimEnd('/')
         buildConfigField("String", "RELAY_URL", "\"$relayUrl\"")
@@ -55,6 +55,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.7.0")
     implementation("androidx.camera:camera-view:1.7.0")
     implementation("androidx.camera:camera-video:1.7.0")
+    // Retrato, Noche and HDR with the phone maker's own processing, when the phone offers it (CameraX Extensions).
+    implementation("androidx.camera:camera-extensions:1.7.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.18")
     testImplementation("androidx.compose.ui:ui-test-junit4")

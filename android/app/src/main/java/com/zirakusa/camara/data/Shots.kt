@@ -8,10 +8,12 @@ import java.time.format.DateTimeFormatter
 
 /** Photo or video. [key] is what MCP uses. */
 enum class Mode(val key: String) { PHOTO("photo"), VIDEO("video") }
-enum class Flash(val key: String) { OFF("off"), AUTO("auto"), ON("on") }
+/** [TORCH] keeps the light on («Linterna»), also while recording. */
+enum class Flash(val key: String) { OFF("off"), AUTO("auto"), ON("on"), TORCH("torch") }
 /** The self-timer in seconds. */
 enum class Timer(val key: String, val seconds: Int) { OFF("off", 0), S3("3", 3), S10("10", 10) }
-enum class Ratio(val key: String, val w: Int, val h: Int) { R4_3("4:3", 3, 4), R16_9("16:9", 9, 16) }
+/** 1:1 is taken as 4:3 and its middle square kept. */
+enum class Ratio(val key: String, val w: Int, val h: Int) { R4_3("4:3", 3, 4), R16_9("16:9", 9, 16), R1_1("1:1", 1, 1) }
 enum class Quality(val key: String, val label: String) { HD("hd", "HD 720p"), FHD("fhd", "Full HD 1080p"), UHD("uhd", "4K") }
 
 /** Pure camera rules: zoom buttons, the countdown, file names and the recording clock. */
@@ -84,6 +86,17 @@ class Settings(private val kv: KeyValues) {
     var volumeKeys: Boolean get() = flag("volume", true); set(v) = setFlag("volume", v)
     /** Record sound with videos (needs the microphone permission). */
     var audio: Boolean get() = flag("audio", true); set(v) = setFlag("audio", v)
+    var scene: Scene get() = pick("scene", Scene.PHOTO); set(v) = kv.put("scene", v.name)
+    /** HDR with the phone maker's processing (only where the phone offers it). */
+    var hdr: Boolean get() = flag("hdr", false); set(v) = setFlag("hdr", v)
+    var color: ColorStyle get() = pick("color", ColorStyle.NATURAL); set(v) = kv.put("color", v.name)
+    /** «Cámara · fecha» at the bottom of photos. */
+    var watermark: Boolean get() = flag("watermark", false); set(v) = setFlag("watermark", v)
+    var stabilization: Boolean get() = flag("stabilization", true); set(v) = setFlag("stabilization", v)
+    var iso: Int? get() = kv.get("iso")?.toIntOrNull()?.takeIf { it in Pro.isos }; set(v) = kv.put("iso", v?.toString())
+    var shutter: Long? get() = kv.get("shutter")?.toLongOrNull()?.takeIf { it in Pro.shutters }; set(v) = kv.put("shutter", v?.toString())
+    var ev: Int get() = kv.get("ev")?.toIntOrNull()?.takeIf { it in Pro.evs } ?: 0; set(v) = kv.put("ev", v.toString())
+    var balance: Balance get() = pick("balance", Balance.AUTO); set(v) = kv.put("balance", v.name)
     var theme: String? get() = kv.get("theme"); set(v) = kv.put("theme", v)
     var accent: String? get() = kv.get("accent"); set(v) = kv.put("accent", v)
 }

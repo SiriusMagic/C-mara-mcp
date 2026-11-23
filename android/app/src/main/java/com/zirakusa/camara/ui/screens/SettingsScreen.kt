@@ -30,7 +30,7 @@ import com.zirakusa.camara.ui.Page
 import com.zirakusa.camara.ui.CamaraState
 import com.zirakusa.camara.ui.theme.CamaraColors
 
-/** «Ajustes»: grid, sound, volume buttons, video quality and sound, Modo MCP, Temas, privacy and version. */
+/** «Ajustes»: grid, sound, volume buttons, watermark, video quality, sound and stabilizer, Modo MCP, Temas, privacy and version. */
 @Composable fun SettingsScreen(state: CamaraState) {
     var privacy by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(CamaraColors.Background).systemBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -43,6 +43,8 @@ import com.zirakusa.camara.ui.theme.CamaraColors
             SwitchItem(stringResource(R.string.sound), null, state.sound, onChange = state::changeSound)
             Divider()
             SwitchItem(stringResource(R.string.volume_keys), stringResource(R.string.volume_keys_hint), state.volumeKeys, onChange = state::changeVolumeKeys)
+            Divider()
+            SwitchItem(stringResource(R.string.watermark), stringResource(R.string.watermark_hint), state.watermark, onChange = state::changeWatermark)
         }
         Caption(stringResource(R.string.video))
         Group {
@@ -52,6 +54,8 @@ import com.zirakusa.camara.ui.theme.CamaraColors
             }
             Divider()
             SwitchItem(stringResource(R.string.audio), stringResource(R.string.audio_hint), state.audio, onChange = state::changeAudio)
+            Divider()
+            SwitchItem(stringResource(R.string.stabilization), stringResource(R.string.stabilization_hint), state.stabilization, onChange = state::changeStabilization)
         }
         Group {
             val status = when {

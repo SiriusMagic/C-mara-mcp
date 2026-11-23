@@ -84,4 +84,42 @@
     <string name="privacy_text">Cámara has no ads or analytics. Photos and videos are saved in your gallery (DCIM/Camera), like with the phone\'s camera, and never leave it. The microphone only records the sound of videos. Only if you turn on MCP mode, the AI you connect with a token can see your settings and the names and times of your photos (never the images) and, with a read-and-write token, change the settings, through the relay. The AI can never take photos or record.</string>
     <plurals name="photos"><item quantity="one">%1$d photo today</item><item quantity="other">%1$d photos today</item></plurals>
     <plurals name="videos"><item quantity="one">%1$d video</item><item quantity="other">%1$d videos</item></plurals>
+    <string name="scene_video">Video</string>
+    <string name="scene_photo">Photo</string>
+    <string name="scene_portrait">Portrait</string>
+    <string name="scene_night">Night</string>
+    <string name="scene_pro">Pro</string>
+    <string name="scene_document">Documents</string>
+    <string name="more_hint">More modes</string>
+    <string name="quick">Quick settings</string>
+    <string name="hdr">HDR</string>
+    <string name="color_style">Colour style</string>
+    <string name="color_natural">Natural</string>
+    <string name="color_vivid">Vivid</string>
+    <string name="color_warm">Warm</string>
+    <string name="color_cool">Cool</string>
+    <string name="color_mono">B/W</string>
+    <string name="color_sepia">Sepia</string>
+    <string name="watermark">Watermark</string>
+    <string name="watermark_hint">«Cámara» and the date at the bottom of photos</string>
+    <string name="stabilization">Stabilization</string>
+    <string name="stabilization_hint">Steadier videos while walking</string>
+    <string name="flash_off">Off</string>
+    <string name="flash_on">On</string>
+    <string name="flash_auto">Auto</string>
+    <string name="flash_torch">Torch</string>
+    <string name="night_hint">Hold the phone still</string>
+    <string name="portrait_hint">Background blur</string>
+    <string name="document_hint">Frame the page: it comes out clean black and white</string>
+    <string name="pro_ev">EV</string>
+    <string name="pro_iso">ISO</string>
+    <string name="pro_shutter">Shutter</string>
+    <string name="pro_wb">Balance</string>
+    <string name="pro_reset">Automatic</string>
+    <string name="wb_auto">Auto</string>
+    <string name="wb_daylight">Sun</string>
+    <string name="wb_cloudy">Cloudy</string>
+    <string name="wb_incandescent">Bulb</string>
+    <string name="wb_fluorescent">Fluorescent</string>
+    <string name="mm">%1$d MM</string>
 </resources>

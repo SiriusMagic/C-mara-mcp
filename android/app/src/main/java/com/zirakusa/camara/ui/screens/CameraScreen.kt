@@ -14,28 +14,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cameraswitch
-import androidx.compose.material.icons.outlined.FlashAuto
-import androidx.compose.material.icons.outlined.FlashOff
-import androidx.compose.material.icons.outlined.FlashOn
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.PhotoCamera
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material.icons.outlined.TimerOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -44,22 +39,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zirakusa.camara.R
-import com.zirakusa.camara.data.Flash
 import com.zirakusa.camara.data.Lens
 import com.zirakusa.camara.data.Mode
-import com.zirakusa.camara.data.Timer
+import com.zirakusa.camara.data.Portrait
+import com.zirakusa.camara.data.Scene
 import com.zirakusa.camara.ui.AppActions
 import com.zirakusa.camara.ui.CamaraState
-import com.zirakusa.camara.ui.Page
+import com.zirakusa.camara.ui.Panel
 import com.zirakusa.camara.ui.theme.CamaraColors
 
-private val White = Color.White
-private val Glass = Color(0x55000000)
-private val Red = Color(0xFFFF453A)
+internal val White = Color.White
+internal val Glass = Color(0x55000000)
+internal val Red = Color(0xFFFF453A)
 
 /**
- * The camera: flash, timer, ratio and Ajustes on top; the picture in its shape (4:3 or 16:9) with optional thirds; zoom
- * buttons; FOTO · VIDEO; the last shot, the big button and the lens switch at the bottom. Pinch zooms and a tap focuses.
+ * The camera: the top bar (flash, HDR, ˅ quick settings, colour style, shape); the picture in its shape with thirds, the
+ * document frame and the countdown; zoom (or Retrato's 24/35/50 mm), Pro's dials, the modes and «Más»; the last shot, the
+ * big button and the lens switch. Pinch zooms and a tap focuses.
  */
 @Composable fun CameraScreen(state: CamaraState, actions: AppActions) = Box(Modifier.fillMaxSize().background(Color.Black)) {
     if (!state.cameraAllowed) return@Box Column(Modifier.align(Alignment.Center).padding(24.dp).clip(RoundedCornerShape(28.dp)).background(CamaraColors.Card).padding(24.dp),
@@ -72,32 +68,23 @@ private val Red = Color(0xFFFF453A)
     Box(Modifier.fillMaxWidth().align(Alignment.Center).aspectRatio(if (video) 9f / 16f else state.ratio.w.toFloat() / state.ratio.h)) {
         actions.preview(Modifier.fillMaxSize())
         if (state.grid) Thirds()
+        if (state.scene == Scene.DOCUMENT) DocumentFrame()
         if (state.flashBlink) Box(Modifier.fillMaxSize().background(Color(0xAAFFFFFF)))
         state.countdown?.let { Text("$it", Modifier.align(Alignment.Center), color = White, fontSize = 120.sp, fontWeight = FontWeight.Light) }
+        hint(state)?.let { Text(stringResource(it), Modifier.align(Alignment.TopCenter).padding(12.dp).clip(RoundedCornerShape(8.dp)).background(Glass)
+            .padding(horizontal = 12.dp, vertical = 6.dp), color = White, fontSize = 14.sp) }
     }
-    Row(Modifier.fillMaxWidth().statusBarsPadding().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        if (!video) Top(when (state.flash) { Flash.OFF -> Icons.Outlined.FlashOff; Flash.AUTO -> Icons.Outlined.FlashAuto; Flash.ON -> Icons.Outlined.FlashOn },
-            stringResource(R.string.flash), state.flash != Flash.OFF, onClick = state::nextFlash) else Box(Modifier.size(48.dp))
-        if (state.recording) Text("● " + Lens.clock(state.recorded), Modifier.clip(CircleShape).background(Red).padding(horizontal = 14.dp, vertical = 6.dp), color = White, fontSize = 16.sp)
-        else Top(if (state.timer == Timer.OFF) Icons.Outlined.TimerOff else Icons.Outlined.Timer, stringResource(R.string.timer), state.timer != Timer.OFF,
-            if (state.timer == Timer.OFF) null else "${state.timer.seconds}s", state::nextTimer)
-        if (!video) Text(state.ratio.key, Modifier.clip(CircleShape).background(Glass).clickable(onClickLabel = stringResource(R.string.ratio)) {
-            state.changeRatio(if (state.ratio.ordinal == 0) com.zirakusa.camara.data.Ratio.R16_9 else com.zirakusa.camara.data.Ratio.R4_3) }
-            .padding(horizontal = 12.dp, vertical = 10.dp), color = White, fontSize = 14.sp) else Box(Modifier.size(48.dp))
-        Top(Icons.Outlined.Settings, stringResource(R.string.settings), false) { state.page = Page.SETTINGS }
-    }
+    TopBar(state, Modifier.align(Alignment.TopCenter))
     Column(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 20.dp), horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        if (state.steps.size > 1) Row(Modifier.clip(CircleShape).background(Glass).padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            state.steps.forEach { r ->
-                val on = kotlin.math.abs(state.zoom - r) < 0.05f
-                Text(if (on) Lens.label(state.zoom) else Lens.label(r), Modifier.size(42.dp).clip(CircleShape).background(if (on) Color(0x33FFFFFF) else Color.Transparent)
-                    .clickable { state.zoomTo(r) }.padding(top = 11.dp), color = if (on) CamaraColors.Accent else White, fontSize = 13.sp, textAlign = TextAlign.Center)
-            }
+        if (state.panel == Panel.NONE) {
+            if (state.scene == Scene.PRO) ProPanel(state)
+            if (state.scene == Scene.PORTRAIT) Focals(state) else ZoomPill(state)
         }
-        if (!state.recording) Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
-            ModeTab(stringResource(R.string.photo), !video) { state.changeMode(Mode.PHOTO) }
-            ModeTab(stringResource(R.string.video), video) { state.changeMode(Mode.VIDEO) }
+        when (state.panel) {
+            Panel.QUICK -> QuickRow(state)
+            Panel.FLASH -> FlashRow(state)
+            else -> if (!state.recording) ModeStrip(state)
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 36.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp).clip(RoundedCornerShape(14.dp)).background(Glass).border(2.dp, Color(0x66FFFFFF), RoundedCornerShape(14.dp))
@@ -109,6 +96,15 @@ private val Red = Color(0xFFFF453A)
                 contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Cameraswitch, stringResource(R.string.flip), tint = White) }
         }
     }
+    if (state.panel == Panel.MORE) MoreSheet(state)
+}
+
+private fun hint(state: CamaraState): Int? = when {
+    state.recording || state.countdown != null -> null
+    state.scene == Scene.NIGHT -> R.string.night_hint
+    state.scene == Scene.PORTRAIT && Scene.PORTRAIT in state.extensions -> R.string.portrait_hint
+    state.scene == Scene.DOCUMENT -> R.string.document_hint
+    else -> null
 }
 
 /** The big round button: white for photos, red for video (a square while recording). */
@@ -122,15 +118,25 @@ private val Red = Color(0xFFFF453A)
     }
 }
 
-@Composable private fun Top(icon: ImageVector, label: String, on: Boolean, badge: String? = null, onClick: () -> Unit) =
-    Row(Modifier.clip(CircleShape).background(Glass).clickable(onClickLabel = label, onClick = onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, label, Modifier.size(24.dp), tint = if (on) CamaraColors.Accent else White)
-        if (badge != null) Text(badge, Modifier.padding(start = 4.dp), color = CamaraColors.Accent, fontSize = 13.sp)
+/** .6 · 1× · 3, as far as the camera reaches. */
+@Composable private fun ZoomPill(state: CamaraState) {
+    if (state.steps.size > 1) Row(Modifier.clip(CircleShape).background(Glass).padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        state.steps.forEach { r ->
+            val on = kotlin.math.abs(state.zoom - r) < 0.05f
+            Text(if (on) Lens.label(state.zoom) else Lens.label(r), Modifier.size(42.dp).clip(CircleShape).background(if (on) Color(0x33FFFFFF) else Color.Transparent)
+                .clickable { state.zoomTo(r) }.padding(top = 11.dp), color = if (on) CamaraColors.Accent else White, fontSize = 13.sp, textAlign = TextAlign.Center)
+        }
     }
+}
 
-@Composable private fun ModeTab(text: String, on: Boolean, onClick: () -> Unit) =
-    Text(text.uppercase(), Modifier.clip(CircleShape).clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 6.dp),
-        color = if (on) CamaraColors.Accent else White, fontSize = 15.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal)
+/** Retrato: 24 MM · 35 MM · 50 MM. */
+@Composable private fun Focals(state: CamaraState) = Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
+    state.focals.forEach { mm ->
+        val on = kotlin.math.abs(state.zoom - Portrait.zoom(mm)) < 0.05f
+        Text(stringResource(R.string.mm, mm), Modifier.clip(CircleShape).clickable { state.zoomTo(Portrait.zoom(mm)) }.padding(horizontal = 8.dp, vertical = 6.dp),
+            color = if (on) CamaraColors.Accent else White, fontSize = 15.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal)
+    }
+}
 
 /** Lines of thirds, to place things well. */
 @Composable private fun Thirds() = Canvas(Modifier.fillMaxSize()) {
@@ -139,4 +145,9 @@ private val Red = Color(0xFFFF453A)
         drawLine(c, Offset(size.width * i / 3, 0f), Offset(size.width * i / 3, size.height), w)
         drawLine(c, Offset(0f, size.height * i / 3), Offset(size.width, size.height * i / 3), w)
     }
+}
+
+/** A sheet-shaped frame to line the page up with. */
+@Composable private fun DocumentFrame() = Canvas(Modifier.fillMaxSize().padding(28.dp)) {
+    drawRoundRect(Color(0xCCFFFFFF), Offset.Zero, Size(size.width, size.height), CornerRadius(12.dp.toPx()), style = Stroke(2.dp.toPx()))
 }

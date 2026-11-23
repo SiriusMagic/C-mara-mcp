@@ -1,6 +1,13 @@
 package com.zirakusa.camara
 
+import com.zirakusa.camara.data.Balance
+import com.zirakusa.camara.data.ColorStyle
 import com.zirakusa.camara.data.Flash
+import com.zirakusa.camara.data.Pixels
+import com.zirakusa.camara.data.Portrait
+import com.zirakusa.camara.data.Pro
+import com.zirakusa.camara.data.Ratio
+import com.zirakusa.camara.data.Scene
 import com.zirakusa.camara.data.Lens
 import com.zirakusa.camara.data.MapValues
 import com.zirakusa.camara.data.Mode
@@ -9,6 +16,7 @@ import com.zirakusa.camara.data.Shot
 import com.zirakusa.camara.data.Shots
 import com.zirakusa.camara.data.Timer
 import com.zirakusa.camara.ui.CamaraState
+import com.zirakusa.camara.ui.Panel
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -68,7 +76,56 @@ class CameraTest {
         state.flip(); assertFalse(state.front)
         state.press(); assertEquals(1, stopped)
         state.saved(Shot(0, "content://v/1", "VID_1.mp4", Mode.VIDEO, 5, 12)); assertFalse(state.recording); assertEquals(1L, state.last!!.id)
-        state.nextFlash(); assertEquals(Flash.AUTO, state.flash); assertEquals(Flash.AUTO, CamaraState(kv).flash)
+        state.changeMode(Mode.PHOTO); state.nextFlash(); assertEquals(Flash.AUTO, state.flash); assertEquals(Flash.AUTO, CamaraState(kv).flash)
         state.zoomMin = 0.5f; state.zoomMax = 8f; state.zoomTo(20f); assertEquals(8f, state.zoom); assertEquals(listOf(0.5f, 1f, 2f, 5f), state.steps)
+    }
+
+    @Test fun colourDocumentAndWatermark() {
+        val grey = 0xFF808080.toInt(); val red = 0xFFC83214.toInt()
+        assertEquals(red, Pixels.apply(ColorStyle.NATURAL.matrix, red))
+        val mono = Pixels.apply(ColorStyle.MONO.matrix, red)
+        assertEquals(mono shr 16 and 255, mono and 255)                                           // no colour left
+        assertEquals(grey, Pixels.apply(ColorStyle.VIVID.matrix, grey))                           // grey stays grey
+        assertTrue((Pixels.apply(ColorStyle.WARM.matrix, grey) shr 16 and 255) > (Pixels.apply(ColorStyle.WARM.matrix, grey) and 255))
+        assertEquals(0xFFFFFFFF.toInt(), Pixels.apply(ColorStyle.VIVID.matrix, 0xFFFFFFFF.toInt()))   // clamped, not overflowing
+        // A yellowish page with dark letters: paper turns white, ink black.
+        val page = IntArray(100) { if (it < 10) 0xFF302A20.toInt() else 0xFFC8B890.toInt() }
+        Pixels.document(page)
+        assertEquals(0xFFFFFFFF.toInt(), page[50]); assertEquals(0xFF000000.toInt(), page[0])
+        Pixels.document(IntArray(0))
+        assertEquals(Triple(500, 0, 3000), Pixels.square(4000, 3000)); assertEquals(Triple(0, 500, 3000), Pixels.square(3000, 4000))
+        assertEquals("Cámara · 23/11/2026 17:33", Pixels.watermark(LocalDateTime.of(2026, 11, 23, 17, 33)))
+    }
+
+    @Test fun proAndPortraitRules() {
+        assertEquals("Auto", Pro.isoLabel(null)); assertEquals("800", Pro.isoLabel(800))
+        assertEquals("1/1000", Pro.shutterLabel(1_000_000)); assertEquals("1/60", Pro.shutterLabel(16_666_667)); assertEquals("1/4", Pro.shutterLabel(250_000_000))
+        assertEquals("0", Pro.evLabel(0, 1f / 3)); assertEquals("+1", Pro.evLabel(3, 1f / 3)); assertEquals("−0.7", Pro.evLabel(-2, 1f / 3))
+        assertNull(Pro.manual(null, null)); assertEquals(800 to 16_666_667L, Pro.manual(800, null)); assertEquals(400 to 1_000_000L, Pro.manual(null, 1_000_000))
+        assertEquals(listOf(24, 35, 50), Portrait.steps(10f)); assertEquals(listOf(24, 35), Portrait.steps(1.5f)); assertEquals(35 / 24f, Portrait.zoom(35))
+        assertEquals(listOf(Scene.VIDEO, Scene.PHOTO, Scene.PORTRAIT, Scene.NIGHT), Scene.strip)
+        val s = Settings(MapValues())
+        assertEquals(Scene.PHOTO, s.scene); assertEquals(ColorStyle.NATURAL, s.color); assertTrue(s.stabilization); assertNull(s.iso)
+        s.iso = 9999; assertNull(s.iso); s.iso = 400; assertEquals(400, s.iso); s.ev = 99; assertEquals(0, s.ev)
+    }
+
+    @Test fun scenesPanelsAndPro() {
+        val kv = MapValues()
+        val state = CamaraState(kv)
+        state.toggle(Panel.QUICK); assertEquals(Panel.QUICK, state.panel); state.toggle(Panel.QUICK); assertEquals(Panel.NONE, state.panel)
+        state.toggle(Panel.MORE); state.changeScene(Scene.PRO)
+        assertEquals(Scene.PRO, state.scene); assertEquals(Mode.PHOTO, state.mode); assertEquals(Panel.NONE, state.panel)
+        assertEquals(Scene.PRO, CamaraState(kv).scene)                                            // opens in the last mode
+        state.changeIso(800); state.changeShutter(4_000_000); state.changeBalance(Balance.CLOUDY); state.evMax = 6; state.changeEv(12)
+        assertEquals(6, state.ev); assertEquals(800, CamaraState(kv).iso)
+        state.resetPro(); assertNull(state.iso); assertEquals(0, state.ev); assertEquals(Balance.AUTO, state.balance)
+        // Square, colour, watermark or document: the photo is changed after it is taken.
+        assertTrue(state.processed.not()); state.changeRatio(Ratio.R1_1); assertTrue(state.processed); state.changeRatio(Ratio.R4_3)
+        state.changeScene(Scene.DOCUMENT); assertTrue(state.processed); state.changeScene(Scene.PHOTO); state.nextColor(); assertEquals(ColorStyle.VIVID, state.color)
+        assertTrue(state.processed); state.changeColor(ColorStyle.NATURAL)
+        // Flash in video: only off and the torch.
+        state.changeFlash(Flash.ON); state.changeScene(Scene.VIDEO); assertEquals(Flash.OFF, state.flashNow)
+        state.nextFlash(); assertEquals(Flash.TORCH, state.flashNow); state.nextFlash(); assertEquals(Flash.OFF, state.flash)
+        assertFalse(state.processed)                                                               // videos are never changed
     }
 }

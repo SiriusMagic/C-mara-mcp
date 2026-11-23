@@ -11,18 +11,26 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.RenderEffect
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
+import com.zirakusa.camara.data.ColorStyle
 import com.zirakusa.camara.data.Mode
 import com.zirakusa.camara.data.SharedValues
 import com.zirakusa.camara.mcp.McpMode
@@ -30,6 +38,7 @@ import com.zirakusa.camara.ui.AppActions
 import com.zirakusa.camara.ui.CamaraApp
 import com.zirakusa.camara.ui.CamaraState
 import com.zirakusa.camara.ui.Page
+import com.zirakusa.camara.ui.Panel
 import com.zirakusa.camara.ui.theme.CamaraTheme
 import kotlinx.coroutines.launch
 
@@ -46,12 +55,13 @@ class MainActivity : ComponentActivity() {
         camera = Camera(this, state)
         McpMode.onChanged = { state.reload() }
         McpMode.load(this)
-        lifecycleScope.launch { snapshotFlow { state.front }.collect(camera::lens) }
-        lifecycleScope.launch { snapshotFlow { state.flash }.collect(camera::flash) }
-        lifecycleScope.launch { snapshotFlow { state.ratio }.collect(camera::ratio) }
+        lifecycleScope.launch { snapshotFlow { listOf(state.scene, state.front, state.hdr) }.collect { camera.bind() } }
+        lifecycleScope.launch { snapshotFlow { state.flashNow }.collect { camera.flash() } }
+        lifecycleScope.launch { snapshotFlow { state.ratio to state.processed }.collect { camera.resolution() } }
         lifecycleScope.launch { snapshotFlow { state.quality }.collect(camera::quality) }
         lifecycleScope.launch { snapshotFlow { state.zoom }.collect(camera::zoom) }
-        val actions = AppActions(preview = { m -> AndroidView({ PreviewView(it).apply { controller = camera.controller } }, m) },
+        lifecycleScope.launch { snapshotFlow { listOf(state.ev, state.iso, state.shutter, state.balance, state.stabilization) }.collect { camera.tune() } }
+        val actions = AppActions(preview = { m -> Preview(m) },
             allow = ::ask, openLast = ::openLast, copyLink = ::copyLink, goToHub = ::goToHub)
         permissions()
         if (!state.cameraAllowed) ask()
@@ -59,11 +69,24 @@ class MainActivity : ComponentActivity() {
             CamaraTheme(state.themeMode, state.accent) {
                 // The camera is always dark: light bars on it.
                 SideEffect { WindowCompat.getInsetsController(window, window.decorView).run { isAppearanceLightStatusBars = false; isAppearanceLightNavigationBars = false } }
-                BackHandler(state.page != Page.CAMERA) { state.page = if (state.page == Page.MCP) Page.SETTINGS else Page.CAMERA }
+                BackHandler(state.page != Page.CAMERA || state.panel != Panel.NONE) {
+                    if (state.page == Page.CAMERA) state.panel = Panel.NONE else state.page = if (state.page == Page.MCP) Page.SETTINGS else Page.CAMERA
+                }
                 CamaraApp(state, actions)
             }
         }
     }
+
+    /** The live picture, with the colour style on it (Android 12 and later; the saved photo always has it). */
+    @Composable private fun Preview(modifier: Modifier) {
+        val style = state.color
+        val effect = if (Build.VERSION.SDK_INT >= 31 && style != ColorStyle.NATURAL) colorEffect(style.matrix) else null
+        val look = if (effect != null) modifier.graphicsLayer { renderEffect = effect } else modifier
+        // TextureView (COMPATIBLE) so the colour style can be drawn over the picture.
+        AndroidView({ PreviewView(it).apply { implementationMode = PreviewView.ImplementationMode.COMPATIBLE; controller = camera.controller } }, look)
+    }
+
+    @RequiresApi(31) private fun colorEffect(m: FloatArray) = RenderEffect.createColorFilterEffect(ColorMatrixColorFilter(m)).asComposeRenderEffect()
 
     override fun onResume() {
         super.onResume()

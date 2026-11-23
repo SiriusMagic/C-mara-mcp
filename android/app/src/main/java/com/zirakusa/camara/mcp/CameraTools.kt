@@ -1,9 +1,11 @@
 package com.zirakusa.camara.mcp
 
+import com.zirakusa.camara.data.ColorStyle
 import com.zirakusa.camara.data.Flash
 import com.zirakusa.camara.data.Mode
 import com.zirakusa.camara.data.Quality
 import com.zirakusa.camara.data.Ratio
+import com.zirakusa.camara.data.Scene
 import com.zirakusa.camara.data.Settings
 import com.zirakusa.camara.data.Shot
 import com.zirakusa.camara.data.Shots
@@ -39,14 +41,17 @@ object CameraTools {
     private fun choice(values: List<String>, description: String) = JSONObject().put("type", "string").put("enum", JSONArray(values)).put("description", description)
 
     val tools = listOf(
-        Tool("camera_settings", "The camera's settings: flash, self-timer, photo ratio, video quality, grid, shutter sound.", false, schema(emptyList())),
+        Tool("camera_settings", "The camera's settings: mode, flash, self-timer, photo ratio, HDR, colour style, watermark, video quality and stabilizer, grid, shutter sound.", false, schema(emptyList())),
         Tool("camera_recent", "Photos and videos made with Cámara, newest first (names and times; the images stay in the gallery).", false,
             schema(emptyList(), "mode" to choice(Mode.entries.map { it.key }, "Only photos or only videos."), "limit" to prop("integer", "1–100, default 20."))),
         Tool("camera_shot", "One photo or video made with Cámara.", false, schema(listOf("id"), "id" to prop("integer", "From camera_recent."))),
         Tool("camera_settings_set", "Changes some settings for the next photos and videos (only those given).", true,
             schema(emptyList(), "flash" to choice(Flash.entries.map { it.key }, "Flash."), "timer" to choice(Timer.entries.map { it.key }, "Self-timer in seconds."),
                 "ratio" to choice(Ratio.entries.map { it.key }, "Photo shape."), "video_quality" to choice(Quality.entries.map { it.key }, "Video quality."),
-                "grid" to prop("boolean", "Lines of thirds on the screen."), "sound" to prop("boolean", "Shutter sound."))),
+                "grid" to prop("boolean", "Lines of thirds on the screen."), "sound" to prop("boolean", "Shutter sound."),
+                "mode" to choice(Scene.entries.map { it.key }, "The camera mode the app opens in."), "hdr" to prop("boolean", "HDR (where the phone offers it)."),
+                "color" to choice(ColorStyle.entries.map { it.key }, "Colour style of new photos."), "watermark" to prop("boolean", "«Cámara» and the date on photos."),
+                "stabilization" to prop("boolean", "Video stabilizer."))),
     )
 
     fun available(access: Access) = tools.filter { !it.write || access == Access.WRITE }
@@ -82,9 +87,12 @@ object CameraTools {
         val ratio = pick(args, "ratio", Ratio.entries) { it.key }
         val quality = pick(args, "video_quality", Quality.entries) { it.key }
         val grid = flag(args, "grid"); val sound = flag(args, "sound")
+        val scene = pick(args, "mode", Scene.entries) { it.key }; val color = pick(args, "color", ColorStyle.entries) { it.key }
+        val hdr = flag(args, "hdr"); val watermark = flag(args, "watermark"); val stabilization = flag(args, "stabilization")
         if (args.length() == 0) throw ToolFailure("BAD_ARGUMENT", "Give at least one setting to change.")
         flash?.let { s.flash = it }; timer?.let { s.timer = it }; ratio?.let { s.ratio = it }; quality?.let { s.quality = it }
         grid?.let { s.grid = it }; sound?.let { s.sound = it }
+        scene?.let { s.scene = it }; color?.let { s.color = it }; hdr?.let { s.hdr = it }; watermark?.let { s.watermark = it }; stabilization?.let { s.stabilization = it }
         data.changed()
         return settings(s)
     }
@@ -94,7 +102,8 @@ object CameraTools {
     private fun flag(args: JSONObject, key: String): Boolean? = if (!args.has(key)) null else args.opt(key) as? Boolean ?: throw ToolFailure("BAD_ARGUMENT", "«$key» is true or false.")
 
     private fun settings(s: Settings) = JSONObject().put("flash", s.flash.key).put("timer", s.timer.key).put("ratio", s.ratio.key)
-        .put("video_quality", s.quality.key).put("grid", s.grid).put("sound", s.sound)
+        .put("video_quality", s.quality.key).put("grid", s.grid).put("sound", s.sound).put("mode", s.scene.key).put("hdr", s.hdr)
+        .put("color", s.color.key).put("watermark", s.watermark).put("stabilization", s.stabilization)
 
     private fun shot(s: Shot, zone: ZoneId) = JSONObject().put("id", s.id).put("name", s.name).put("mode", s.mode.key)
         .put("at", Instant.ofEpochMilli(s.at).atZone(zone).toLocalDateTime().withNano(0).toString()).put("seconds", s.seconds)

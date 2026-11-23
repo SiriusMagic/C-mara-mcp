@@ -9,11 +9,13 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.zirakusa.camara.data.MapValues
 import com.zirakusa.camara.data.Mode
+import com.zirakusa.camara.data.Scene
 import com.zirakusa.camara.data.Shot
 import com.zirakusa.camara.ui.AppActions
 import com.zirakusa.camara.ui.CamaraApp
@@ -58,5 +60,19 @@ class ScreenshotsTest {
         state.page = Page.SETTINGS
         compose.onNodeWithText("Botones de volumen").assertExists()
         shot("settings")
+        state.page = Page.CAMERA; state.changeMode(Mode.PHOTO)
+        compose.onNodeWithContentDescription("Ajustes rápidos").performClick()
+        compose.onNodeWithText("Marca de agua").performScrollTo().performClick(); assertEquals(true, state.watermark)
+        shot("quick")
+        compose.onNodeWithContentDescription("Ajustes rápidos").performClick()
+        compose.onNodeWithContentDescription("Más modos").performClick()
+        compose.onNodeWithText("PRO").assertExists()
+        shot("more")
+        compose.onNodeWithText("PRO").performClick()
+        compose.onNodeWithText("ISO").performClick(); compose.onNodeWithText("800").performClick(); assertEquals(800, state.iso)
+        shot("pro")
+        state.changeScene(Scene.PORTRAIT)
+        compose.onNodeWithText("35 MM").assertExists()
+        shot("portrait")
     }
 }

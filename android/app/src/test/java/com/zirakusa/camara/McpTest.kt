@@ -69,6 +69,9 @@ class McpTest {
         assertEquals("2023-11-14T22:13:20", ok("camera_shot", JSONObject().put("id", 1)).getJSONObject("shot").getString("at"))
         val set = ok("camera_settings_set", JSONObject().put("flash", "auto").put("timer", "10").put("grid", true))
         assertEquals("auto", set.getString("flash")); assertEquals("10", set.getString("timer")); assertTrue(data.settings.grid)
+        val looks = ok("camera_settings_set", JSONObject().put("mode", "night").put("color", "sepia").put("watermark", true).put("flash", "torch"))
+        assertEquals("night", looks.getString("mode")); assertEquals("sepia", looks.getString("color")); assertTrue(looks.getBoolean("watermark"))
+        assertEquals("torch", looks.getString("flash")); assertTrue(looks.getBoolean("stabilization"))
     }
 
     @Test fun badArgumentsChangeNothing() {
@@ -76,6 +79,9 @@ class McpTest {
         assertEquals("off", data.settings.flash.key)                                              // checked before changing
         assertEquals("BAD_ARGUMENT", code("camera_settings_set", JSONObject()))
         assertEquals("BAD_ARGUMENT", code("camera_settings_set", JSONObject().put("grid", "yes")))
+        assertEquals("BAD_ARGUMENT", code("camera_settings_set", JSONObject().put("color", "neon").put("watermark", true)))
+        assertFalse(data.settings.watermark)
+        assertEquals("BAD_ARGUMENT", code("camera_settings_set", JSONObject().put("mode", "slowmo")))
         assertEquals("BAD_ARGUMENT", code("camera_recent", JSONObject().put("mode", "selfie")))
         assertEquals("BAD_ARGUMENT", code("camera_recent", JSONObject().put("limit", 0)))
         assertEquals("BAD_ARGUMENT", code("camera_shot", JSONObject().put("id", "1")))
