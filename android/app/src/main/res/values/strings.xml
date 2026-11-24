@@ -130,4 +130,5 @@
     <string name="icon_blue">Azul</string>
     <string name="icon_green">Verde</string>
     <string name="icon_hint">Cambia el icono de la pantalla de inicio. Algunos lanzadores tardan unos segundos en mostrarlo.</string>
+    <string name="act_permission">Órdenes de la familia (Lucía)</string>
 </resources>

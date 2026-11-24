@@ -7,7 +7,9 @@
   y anótalo en `CHANGELOG.md`.
 - Reglas puras (zoom, nombres de archivo, reloj de grabación, lista de fotos, ajustes) en `data/`, con pruebas. Las
   pantallas solo pintan y avisan. Todo lo de CameraX vive en `Camera.kt`.
-- La IA **nunca** hace fotos ni graba: no existe ni existirá una herramienta para eso. Por MCP solo salen ajustes, nombres
+- La IA **nunca** hace fotos ni graba: no existe ni existirá una herramienta MCP para eso. La única excepción es la voz
+  del propio usuario: Lucía (Gateway Hub, misma firma) pregunta «¿hago la foto?» y, con su «sí», abre Cámara con una
+  cuenta atrás visible de 3 s que un toque cancela (`CamaraState.voiceCapture`, orden `CAPTURE` con permiso `ACT`). Por MCP solo salen ajustes, nombres
   y horas; nunca imágenes ni rutas (`uri`).
 - Privacidad: fotos y videos van a la galería del teléfono (DCIM/Camera). Nada sale salvo por el Modo MCP que el usuario
   active; internet es solo para eso.

@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <permission android:name="com.zirakusa.gatewayhub.permission.LINK" android:protectionLevel="signature"
         android:label="@string/hub_link_permission" />
+    <!-- The family's orders (FAMILIA.md §10): Lucía's «toma una foto», only from apps signed with the same key. -->
+    <permission android:name="com.zirakusa.family.permission.ACT" android:protectionLevel="signature"
+        android:label="@string/act_permission" />
     <permission android:name="com.zirakusa.family.permission.SUMMARY" android:protectionLevel="signature"
         android:label="@string/summary_permission" />
     <queries>
@@ -42,6 +45,14 @@
         </activity>
         <!-- The launcher icon the user picks in Ajustes (one alias enabled at a time). Never rename an alias: Android keeps
              the enabled state by name, and a renamed one could leave the app without an icon after an update. -->
+        <!-- «Oye Lucía, toma una foto» (after the user's «sí»): a photo with a 3 s countdown that a tap cancels. Not MCP. -->
+        <activity-alias android:name=".FamilyActions" android:targetActivity=".MainActivity" android:exported="true"
+            android:permission="com.zirakusa.family.permission.ACT">
+            <intent-filter>
+                <action android:name="com.zirakusa.family.action.CAPTURE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
         <activity-alias android:name=".Home" android:targetActivity=".MainActivity" android:exported="true"
             android:enabled="true" android:icon="@mipmap/ic_launcher">
             <intent-filter>

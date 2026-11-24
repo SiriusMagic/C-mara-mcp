@@ -129,4 +129,5 @@
     <string name="icon_blue">Blue</string>
     <string name="icon_green">Green</string>
     <string name="icon_hint">Changes the home-screen icon. Some launchers take a few seconds to show it.</string>
+    <string name="act_permission">Family orders (Lucía)</string>
 </resources>

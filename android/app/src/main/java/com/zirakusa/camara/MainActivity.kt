@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
         camera = Camera(this, state)
         McpMode.onChanged = { state.reload() }
         McpMode.load(this)
+        voice(intent)
         lifecycleScope.launch { snapshotFlow { listOf(state.scene, state.front, state.hdr) }.collect { camera.bind() } }
         lifecycleScope.launch { snapshotFlow { state.flashNow }.collect { camera.flash() } }
         lifecycleScope.launch { snapshotFlow { state.ratio to state.processed }.collect { camera.resolution() } }
@@ -88,6 +89,16 @@ class MainActivity : ComponentActivity() {
     }
 
     @RequiresApi(31) private fun colorEffect(m: FloatArray) = RenderEffect.createColorFilterEffect(ColorMatrixColorFilter(m)).asComposeRenderEffect()
+
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); voice(intent) }
+
+    /** Lucía's «toma una foto» (only apps signed like Cámara may send it: the ACT permission on the alias). */
+    private fun voice(i: Intent?) {
+        if (i?.action != CAPTURE) return
+        permissions()
+        state.voiceCapture(selfie = i.getBooleanExtra("selfie", false))
+        i.action = null                                    // not again when the screen turns
+    }
 
     override fun onResume() {
         super.onResume()
@@ -139,5 +150,5 @@ class MainActivity : ComponentActivity() {
         if (hub != null) startActivity(hub) else Toast.makeText(this, R.string.mcp_paste_in_hub, Toast.LENGTH_LONG).show()
     }
 
-    companion object { const val LUMA = "app.luma.gallery" }
+    companion object { const val LUMA = "app.luma.gallery"; const val CAPTURE = "com.zirakusa.family.action.CAPTURE" }
 }

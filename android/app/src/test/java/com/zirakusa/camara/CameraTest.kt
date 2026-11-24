@@ -128,4 +128,17 @@ class CameraTest {
         state.nextFlash(); assertEquals(Flash.TORCH, state.flashNow); state.nextFlash(); assertEquals(Flash.OFF, state.flash)
         assertFalse(state.processed)                                                               // videos are never changed
     }
+
+    /** «Oye Lucía, toma una foto» (after «sí»): photo mode, the asked camera, a visible countdown; never while recording. */
+    @Test fun voiceCaptureCountsDownFirst() = runBlocking {
+        val state = CamaraState(MapValues(), launch = { runBlocking { it() } })
+        val shot = mutableListOf<Mode>(); state.shoot = { shot += it }
+        state.voiceCapture(selfie = false); assertTrue(shot.isEmpty())                       // no camera permission: nothing
+        state.cameraAllowed = true; state.changeScene(Scene.VIDEO)
+        val t0 = System.currentTimeMillis(); state.voiceCapture(selfie = true)
+        assertTrue(System.currentTimeMillis() - t0 >= 2900)                                    // the countdown ran
+        assertEquals(listOf(Mode.PHOTO), shot); assertEquals(Scene.PHOTO, state.scene); assertTrue(state.front)
+        state.changeScene(Scene.VIDEO); state.press(); state.started()
+        state.voiceCapture(selfie = false); assertEquals(Mode.VIDEO, shot.last()); assertEquals(2, shot.size)   // recording: untouched
+    }
 }

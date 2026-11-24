@@ -102,17 +102,32 @@ class CamaraState(private val kv: KeyValues, private val launch: (suspend () -> 
     }
 
     /** The big button: photo (after the timer), start or stop the video; during the countdown it cancels. */
-    fun press() {
+    fun press() = press(timer.seconds)
+
+    private fun press(seconds: Int) {
         when {
             recording -> stop()
             countdown != null -> countdown = null
-            timer == Timer.OFF -> shoot(mode)
+            seconds == 0 -> shoot(mode)
             else -> launch {
-                for (left in timer.seconds downTo 1) { countdown = left; delay(1000); if (countdown == null) return@launch }
+                for (left in seconds downTo 1) { countdown = left; delay(1000); if (countdown == null) return@launch }
                 countdown = null; shoot(mode)
             }
         }
     }
+
+    /**
+     * «Oye Lucía, toma una foto» after the user said «sí»: a photo with a visible countdown of [VOICE_SECONDS] that a tap
+     * on the button cancels. Never through MCP (no AI tool takes photos); never while recording or counting already.
+     */
+    fun voiceCapture(selfie: Boolean) {
+        if (recording || countdown != null || !cameraAllowed) return
+        if (mode != Mode.PHOTO) changeScene(Scene.PHOTO)
+        if (selfie != front) flip()
+        press(VOICE_SECONDS)
+    }
+
+    companion object { const val VOICE_SECONDS = 3 }
 
     fun changeMode(m: Mode) = changeScene(if (m == Mode.VIDEO) Scene.VIDEO else Scene.PHOTO)
     /** Another mode (not while recording or counting down). Retrato starts at 24 mm. */
