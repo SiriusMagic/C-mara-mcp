@@ -123,4 +123,11 @@
     <string name="privacy_text">Cámara no tiene anuncios ni estadísticas. Las fotos y videos se guardan en tu galería (DCIM/Camera), como con la cámara del teléfono, y no salen de él. El micrófono solo graba el sonido de los videos. Solo si activas el Modo MCP, la IA que conectes con un token puede ver tus ajustes y los nombres y horas de las fotos (nunca las imágenes) y, si el token es de lectura y escritura, cambiar los ajustes, a través del relay. La IA nunca puede hacer fotos ni grabar.</string>
     <plurals name="photos"><item quantity="one">%1$d foto hoy</item><item quantity="many">%1$d fotos hoy</item><item quantity="other">%1$d fotos hoy</item></plurals>
     <plurals name="videos"><item quantity="one">%1$d video</item><item quantity="many">%1$d videos</item><item quantity="other">%1$d videos</item></plurals>
+    <string name="icon_title">Icono de la app</string>
+    <string name="icon_original">Original</string>
+    <string name="icon_light">Claro</string>
+    <string name="icon_gold">Dorado</string>
+    <string name="icon_blue">Azul</string>
+    <string name="icon_green">Verde</string>
+    <string name="icon_hint">Cambia el icono de la pantalla de inicio. Algunos lanzadores tardan unos segundos en mostrarlo.</string>
 </resources>

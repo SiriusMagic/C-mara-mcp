@@ -122,4 +122,11 @@
     <string name="wb_incandescent">Bulb</string>
     <string name="wb_fluorescent">Fluorescent</string>
     <string name="mm">%1$d MM</string>
+    <string name="icon_title">App icon</string>
+    <string name="icon_original">Original</string>
+    <string name="icon_light">Light</string>
+    <string name="icon_gold">Gold</string>
+    <string name="icon_blue">Blue</string>
+    <string name="icon_green">Green</string>
+    <string name="icon_hint">Changes the home-screen icon. Some launchers take a few seconds to show it.</string>
 </resources>

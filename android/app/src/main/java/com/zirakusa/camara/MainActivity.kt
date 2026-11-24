@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppIcon.load(this)
         enableEdgeToEdge()
         state = CamaraState(SharedValues(this), launch = { block -> lifecycleScope.launch { block() } })
         camera = Camera(this, state)
