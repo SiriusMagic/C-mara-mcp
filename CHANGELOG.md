@@ -1,3 +1,9 @@
+# Cámara 0.2.2
+
+- **«Oye Lucía, toma una foto»**: después de tu «sí», Cámara se abre con una cuenta atrás de 3 segundos que un toque
+  cancela (también «tómame una selfie», con la cámara frontal). Solo la voz del usuario a través de Lucía (misma firma);
+  sigue sin existir una herramienta MCP para hacer fotos.
+
 # Cámara 0.2.1
 
 - **Conectar todas** (Gateway Hub 0.0.21): con un toque en el Hub se activa aquí «Redireccionar a Hub» y la app queda
