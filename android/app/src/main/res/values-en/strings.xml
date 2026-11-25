@@ -90,6 +90,14 @@
     <string name="scene_night">Night</string>
     <string name="scene_pro">Pro</string>
     <string name="scene_document">Documents</string>
+    <string name="scene_video_hint">Record videos with sound.</string>
+    <string name="scene_photo_hint">Everyday photos, with zoom, timer and colour styles.</string>
+    <string name="scene_portrait_hint">Blurred background and 24, 35 or 50 mm, if the phone allows it.</string>
+    <string name="scene_night_hint">Brighter photos in low light: hold the phone still for a moment.</string>
+    <string name="scene_pro_hint">Set exposure, ISO, shutter and white balance yourself.</string>
+    <string name="scene_document_hint">Sharper papers and whiteboards in black and white, inside the frame.</string>
+    <string name="more_list">Show as list</string>
+    <string name="more_grid">Show as grid</string>
     <string name="more_hint">More modes</string>
     <string name="quick">Quick settings</string>
     <string name="hdr">HDR</string>
@@ -123,11 +131,11 @@
     <string name="wb_fluorescent">Fluorescent</string>
     <string name="mm">%1$d MM</string>
     <string name="icon_title">App icon</string>
-    <string name="icon_original">Original</string>
-    <string name="icon_light">Light</string>
-    <string name="icon_gold">Gold</string>
-    <string name="icon_blue">Blue</string>
-    <string name="icon_green">Green</string>
+    <string name="icon_clay">3D</string>
+    <string name="icon_oil">Oil</string>
+    <string name="icon_pixel">Pixel</string>
+    <string name="icon_lens">Lens</string>
+    <string name="icon_cute">Cute</string>
     <string name="icon_hint">Changes the home-screen icon. Some launchers take a few seconds to show it.</string>
     <string name="act_permission">Family orders (Lucía)</string>
 </resources>

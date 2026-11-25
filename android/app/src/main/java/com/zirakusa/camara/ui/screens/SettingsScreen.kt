@@ -69,7 +69,7 @@ import com.zirakusa.camara.ui.theme.CamaraColors
             }
             Item(stringResource(R.string.mcp_title), "$status · ${stringResource(R.string.mcp_settings_hint)}") { state.page = Page.MCP }
         }
-        IconCard(CamaraColors.Card, CamaraColors.Text, CamaraColors.Muted, CamaraColors.Accent, androidx.compose.ui.graphics.Color(0xFF1A1A1A))
+        IconCard(CamaraColors.Card, CamaraColors.Text, CamaraColors.Muted, CamaraColors.Accent)
         ThemeCard(state.themeMode, state.accent, state::changeTheme, state::changeAccent)
         Caption(stringResource(R.string.about))
         Group {

@@ -81,6 +81,8 @@ class Settings(private val kv: KeyValues) {
     var ratio: Ratio get() = pick("ratio", Ratio.R4_3); set(v) = kv.put("ratio", v.name)
     var quality: Quality get() = pick("quality", Quality.FHD); set(v) = kv.put("quality", v.name)
     var grid: Boolean get() = flag("grid", false); set(v) = setFlag("grid", v)
+    /** «Más» as a list with what each mode is for (true) or as a grid of icons (false, the factory setting). */
+    var moreAsList: Boolean get() = flag("more_list", false); set(v) = setFlag("more_list", v)
     var sound: Boolean get() = flag("sound", true); set(v) = setFlag("sound", v)
     /** The volume buttons take the photo (or start and stop the video). */
     var volumeKeys: Boolean get() = flag("volume", true); set(v) = setFlag("volume", v)

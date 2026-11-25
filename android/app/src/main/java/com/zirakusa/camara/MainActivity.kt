@@ -31,6 +31,7 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import com.zirakusa.camara.data.ColorStyle
+import androidx.compose.ui.graphics.asImageBitmap
 import com.zirakusa.camara.data.Mode
 import com.zirakusa.camara.data.SharedValues
 import com.zirakusa.camara.mcp.McpMode
@@ -64,7 +65,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { snapshotFlow { state.zoom }.collect(camera::zoom) }
         lifecycleScope.launch { snapshotFlow { listOf(state.ev, state.iso, state.shutter, state.balance, state.stabilization) }.collect { camera.tune() } }
         val actions = AppActions(preview = { m -> Preview(m) },
-            allow = ::ask, openLast = ::openLast, copyLink = ::copyLink, goToHub = ::goToHub)
+            allow = ::ask, openLast = ::openLast, thumbnail = ::thumbnail, copyLink = ::copyLink, goToHub = ::goToHub)
         permissions()
         if (!state.cameraAllowed) ask()
         setContent {
@@ -137,6 +138,22 @@ class MainActivity : ComponentActivity() {
             try { startActivity(view) } catch (_: ActivityNotFoundException) { Toast.makeText(this, R.string.no_app, Toast.LENGTH_SHORT).show() }
         }
     }
+
+    /**
+     * The last shot's small picture: Android's own thumbnail (10+), or on older phones a scaled-down photo or a video
+     * frame. Only Cámara's own shots, which it may read without asking; nothing leaves the phone.
+     */
+    private suspend fun thumbnail(shot: com.zirakusa.camara.data.Shot): androidx.compose.ui.graphics.ImageBitmap? =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val uri = shot.uri.toUri()
+            val bitmap = try {
+                if (Build.VERSION.SDK_INT >= 29) contentResolver.loadThumbnail(uri, android.util.Size(256, 256), null)
+                else if (shot.mode == Mode.PHOTO) contentResolver.openInputStream(uri)?.use {
+                    android.graphics.BitmapFactory.decodeStream(it, null, android.graphics.BitmapFactory.Options().apply { inSampleSize = 8 })
+                } else android.media.MediaMetadataRetriever().run { try { setDataSource(this@MainActivity, uri); getFrameAtTime(0) } finally { release() } }
+            } catch (_: java.io.IOException) { null } catch (_: RuntimeException) { null }   // deleted meanwhile, unreadable, no frame
+            bitmap?.asImageBitmap()
+        }
 
     private fun copyLink(link: String) {
         getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Cámara MCP", link))

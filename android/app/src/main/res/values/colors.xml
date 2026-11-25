@@ -1,8 +1,8 @@
 <resources>
-    <color name="launcher_background">#1A1A1A</color>
-    <!-- The other launcher icons (Ajustes › Icono de la app). -->
-    <color name="launcher_background_light">#F2F2F2</color>
-    <color name="launcher_background_gold">#F5C518</color>
-    <color name="launcher_background_blue">#1565C0</color>
-    <color name="launcher_background_green">#1B5E20</color>
+    <!-- Behind each launcher icon (Ajustes › Icono de la app); «3D» is the default. -->
+    <color name="launcher_background_clay">#F95553</color>
+    <color name="launcher_background_oil">#41296A</color>
+    <color name="launcher_background_pixel">#3DE5B3</color>
+    <color name="launcher_background_lens">#000C46</color>
+    <color name="launcher_background_cute">#CF96E1</color>
 </resources>

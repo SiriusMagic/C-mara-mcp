@@ -78,6 +78,7 @@ class CamaraState(private val kv: KeyValues, private val launch: (suspend () -> 
     var ratio by mutableStateOf(settings.ratio); private set
     var quality by mutableStateOf(settings.quality); private set
     var grid by mutableStateOf(settings.grid); private set
+    var moreAsList by mutableStateOf(settings.moreAsList); private set
     var sound by mutableStateOf(settings.sound); private set
     var volumeKeys by mutableStateOf(settings.volumeKeys); private set
     var audio by mutableStateOf(settings.audio); private set
@@ -157,6 +158,7 @@ class CamaraState(private val kv: KeyValues, private val launch: (suspend () -> 
     fun changeRatio(r: Ratio) { ratio = r; settings.ratio = r }
     fun changeQuality(q: Quality) { quality = q; settings.quality = q }
     fun changeGrid(on: Boolean) { grid = on; settings.grid = on }
+    fun changeMoreAsList(on: Boolean) { moreAsList = on; settings.moreAsList = on }
     fun changeSound(on: Boolean) { sound = on; settings.sound = on }
     fun changeVolumeKeys(on: Boolean) { volumeKeys = on; settings.volumeKeys = on }
     fun changeAudio(on: Boolean) { audio = on; settings.audio = on }

@@ -2,6 +2,8 @@ package com.zirakusa.camara.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
+import com.zirakusa.camara.data.Shot
 import com.zirakusa.camara.ui.screens.CameraScreen
 import com.zirakusa.camara.ui.screens.McpScreen
 import com.zirakusa.camara.ui.screens.SettingsScreen
@@ -13,6 +15,8 @@ class AppActions(
     val allow: () -> Unit = {},
     /** Opens the last photo or video in Luma (or the phone's gallery). */
     val openLast: () -> Unit = {},
+    /** A small picture of [Shot] for the button next to the shutter (read on the phone, off the main thread); null if none. */
+    val thumbnail: suspend (Shot) -> ImageBitmap? = { null },
     val copyLink: (String) -> Unit = {},
     val goToHub: () -> Unit = {},
 )

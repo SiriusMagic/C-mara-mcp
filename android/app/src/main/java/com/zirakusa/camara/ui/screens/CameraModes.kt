@@ -1,5 +1,15 @@
 package com.zirakusa.camara.ui.screens
 
+import com.zirakusa.camara.ui.Page
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.automirrored.outlined.ViewList
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.NightsStay
+import androidx.compose.material.icons.outlined.Portrait
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -58,7 +68,16 @@ private fun balanceName(b: Balance) = when (b) {
     Balance.INCANDESCENT -> R.string.wb_incandescent; Balance.FLUORESCENT -> R.string.wb_fluorescent
 }
 
-private fun sceneIcon(s: Scene): ImageVector = if (s == Scene.PRO) Icons.Outlined.Tune else Icons.Outlined.DocumentScanner
+private fun sceneIcon(s: Scene): ImageVector = when (s) {
+    Scene.VIDEO -> Icons.Outlined.Videocam; Scene.PHOTO -> Icons.Outlined.PhotoCamera; Scene.PORTRAIT -> Icons.Outlined.Portrait
+    Scene.NIGHT -> Icons.Outlined.NightsStay; Scene.PRO -> Icons.Outlined.Tune; Scene.DOCUMENT -> Icons.Outlined.DocumentScanner
+}
+
+/** What each mode is for, under its name in «Más» (list view). */
+private fun sceneHint(s: Scene) = when (s) {
+    Scene.VIDEO -> R.string.scene_video_hint; Scene.PHOTO -> R.string.scene_photo_hint; Scene.PORTRAIT -> R.string.scene_portrait_hint
+    Scene.NIGHT -> R.string.scene_night_hint; Scene.PRO -> R.string.scene_pro_hint; Scene.DOCUMENT -> R.string.scene_document_hint
+}
 
 /** VIDEO · FOTO · RETRATO · NOCHE (and the «Más» mode in use), then ≡ for «Más». */
 @Composable fun ModeStrip(state: CamaraState) = Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -77,19 +96,46 @@ private fun sceneIcon(s: Scene): ImageVector = if (s == Scene.PRO) Icons.Outline
     }
 }
 
-/** «Más»: the other modes, big, over a dark veil. A tap outside closes it. */
+/**
+ * «Más»: every mode with its icon, over a dark veil, in a grid or (top-right button) a list that says what each one is
+ * for; the gear opens Ajustes. The view chosen is remembered. A tap outside closes it.
+ */
 @Composable fun MoreSheet(state: CamaraState) = Box(Modifier.fillMaxSize().background(Color(0xCC000000)).clickable { state.panel = Panel.NONE }) {
-    Column(Modifier.align(Alignment.Center).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(28.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-            Scene.more.forEach { s ->
-                val on = s == state.scene
-                Column(Modifier.width(140.dp).clip(RoundedCornerShape(16.dp)).clickable { state.changeScene(s) }.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(sceneIcon(s), null, Modifier.size(40.dp), tint = if (on) CamaraColors.Accent else White)
-                    Text(stringResource(sceneName(s)).uppercase(), color = if (on) CamaraColors.Accent else White, fontSize = 15.sp, textAlign = TextAlign.Center)
+    if (state.moreAsList) Column(Modifier.align(Alignment.Center).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 72.dp, bottom = 150.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Scene.entries.forEach { s ->
+            val on = s == state.scene
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0x22FFFFFF)).clickable { state.changeScene(s); state.panel = Panel.NONE }
+                .padding(horizontal = 18.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                Icon(sceneIcon(s), null, Modifier.size(30.dp), tint = if (on) CamaraColors.Accent else White)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(stringResource(sceneName(s)).uppercase(), color = if (on) CamaraColors.Accent else White, fontSize = 17.sp)
+                    Text(stringResource(sceneHint(s)), color = Color(0xB3FFFFFF), fontSize = 14.sp)
                 }
             }
         }
+    } else Column(Modifier.align(Alignment.Center).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        Scene.entries.chunked(3).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { s ->
+                    val on = s == state.scene
+                    Column(Modifier.width(116.dp).clip(RoundedCornerShape(16.dp)).clickable { state.changeScene(s); state.panel = Panel.NONE }.padding(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Icon(sceneIcon(s), null, Modifier.size(36.dp), tint = if (on) CamaraColors.Accent else White)
+                        Text(stringResource(sceneName(s)).uppercase(), color = if (on) CamaraColors.Accent else White, fontSize = 13.sp, textAlign = TextAlign.Center, maxLines = 1, softWrap = false)
+                    }
+                }
+            }
+        }
+    }
+    // Drawn last, so the buttons stay on top of a long list.
+    Row(Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        val toggle = stringResource(if (state.moreAsList) R.string.more_grid else R.string.more_list)
+        Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClickLabel = toggle) { state.changeMoreAsList(!state.moreAsList) }, contentAlignment = Alignment.Center) {
+            Icon(if (state.moreAsList) Icons.Outlined.GridView else Icons.AutoMirrored.Outlined.ViewList, toggle, tint = White)
+        }
+        Box(Modifier.size(48.dp).clip(CircleShape).clickable(onClickLabel = stringResource(R.string.settings)) { state.panel = Panel.NONE; state.page = Page.SETTINGS },
+            contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Settings, stringResource(R.string.settings), tint = White) }
     }
 }
 

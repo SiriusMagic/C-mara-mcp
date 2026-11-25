@@ -37,7 +37,11 @@ import org.robolectric.annotation.GraphicsMode
 class ScreenshotsTest {
     @get:Rule val compose = createComposeRule()
     private fun shot(name: String) { compose.waitForIdle(); onView(isRoot()).captureRoboImage("build/screenshots/camara-$name.png") }
-    private val fake = AppActions(preview = { m -> Box(m.background(Brush.verticalGradient(listOf(Color(0xFF6A8CAF), Color(0xFF2D3E50))))) })
+    /** Which shots the button next to the shutter asked a picture for (a warm square stands in for the photo). */
+    private val pictured = mutableListOf<String>()
+    private val fake = AppActions(preview = { m -> Box(m.background(Brush.verticalGradient(listOf(Color(0xFF6A8CAF), Color(0xFF2D3E50))))) },
+        thumbnail = { s -> pictured += s.uri; androidx.compose.ui.graphics.ImageBitmap(64, 64).also {
+            androidx.compose.ui.graphics.Canvas(it).drawRect(0f, 0f, 64f, 64f, androidx.compose.ui.graphics.Paint().apply { color = Color(0xFFE0A060) }) } })
 
     @Test fun allScreens() {
         val state = CamaraState(MapValues())
@@ -51,12 +55,14 @@ class ScreenshotsTest {
         state.cameraAllowed = true
         compose.onNodeWithText("2×").assertExists()
         shot("photo")
+        assertEquals("content://media/1", pictured.last())                     // the last photo, not a generic icon
         compose.onNodeWithContentDescription("Hacer foto").performClick(); assertEquals(listOf(Mode.PHOTO), taken)
         compose.onNodeWithText("VIDEO").performClick()
         state.started(); state.recorded = 75
         compose.onNodeWithText("● 01:15").assertExists()
         shot("recording")
         state.saved(Shot(0, "content://media/2", "VID.mp4", Mode.VIDEO, 0, 75))
+        compose.waitForIdle(); assertEquals("content://media/2", pictured.last())  // a new shot shows at once
         state.page = Page.SETTINGS
         compose.onNodeWithText("Botones de volumen").assertExists()
         shot("settings")
@@ -66,8 +72,14 @@ class ScreenshotsTest {
         shot("quick")
         compose.onNodeWithContentDescription("Ajustes rápidos").performClick()
         compose.onNodeWithContentDescription("Más modos").performClick()
-        compose.onNodeWithText("PRO").assertExists()
+        compose.onNodeWithText("PRO").assertExists(); compose.onNodeWithText("DOCUMENTOS").assertExists()   // every mode, with its icon
         shot("more")
+        compose.onNodeWithContentDescription("Ver como lista").performClick(); assertEquals(true, state.moreAsList)
+        compose.onNodeWithText("Elige tú la exposición, el ISO, el obturador y el balance de blancos.").assertExists()
+        shot("more-list")
+        compose.onNodeWithContentDescription("Ajustes").performClick(); assertEquals(Page.SETTINGS, state.page)
+        state.page = Page.CAMERA
+        compose.onNodeWithContentDescription("Más modos").performClick()
         compose.onNodeWithText("PRO").performClick()
         compose.onNodeWithText("ISO").performClick(); compose.onNodeWithText("800").performClick(); assertEquals(800, state.iso)
         shot("pro")

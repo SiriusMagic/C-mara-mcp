@@ -1,5 +1,11 @@
 package com.zirakusa.camara.ui.screens
 
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -89,7 +95,7 @@ internal val Red = Color(0xFFFF453A)
         Row(Modifier.fillMaxWidth().padding(horizontal = 36.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp).clip(RoundedCornerShape(14.dp)).background(Glass).border(2.dp, Color(0x66FFFFFF), RoundedCornerShape(14.dp))
                 .clickable(enabled = state.last != null, onClickLabel = stringResource(R.string.last_shot), onClick = actions.openLast), contentAlignment = Alignment.Center) {
-                if (state.last != null) Icon(Icons.Outlined.Image, stringResource(R.string.last_shot), tint = White)
+                LastShot(state, actions)
             }
             Shutter(state)
             Box(Modifier.size(52.dp).clip(CircleShape).background(Glass).clickable(enabled = !state.recording, onClickLabel = stringResource(R.string.flip), onClick = state::flip),
@@ -105,6 +111,19 @@ private fun hint(state: CamaraState): Int? = when {
     state.scene == Scene.PORTRAIT && Scene.PORTRAIT in state.extensions -> R.string.portrait_hint
     state.scene == Scene.DOCUMENT -> R.string.document_hint
     else -> null
+}
+
+/**
+ * The last photo or video, small, like the phone's own camera: its picture as soon as it is saved (a ▶ on videos), or the
+ * gallery icon while it loads or if Android can't make one.
+ */
+@Composable private fun LastShot(state: CamaraState, actions: AppActions) {
+    val last = state.last ?: return
+    val picture by produceState<ImageBitmap?>(null, last.uri) { value = runCatching { actions.thumbnail(last) }.getOrNull() }
+    val shown = picture
+    if (shown == null) Icon(Icons.Outlined.Image, stringResource(R.string.last_shot), tint = White)
+    else Image(shown, stringResource(R.string.last_shot), Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+    if (last.mode == Mode.VIDEO && shown != null) Icon(Icons.Filled.PlayArrow, null, Modifier.size(22.dp), tint = White)
 }
 
 /** The big round button: white for photos, red for video (a square while recording). */

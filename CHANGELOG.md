@@ -1,3 +1,13 @@
+# Cámara 0.3.0
+
+- **La miniatura muestra tu última foto o video** (junto al disparador), como la cámara del teléfono, y cambia en cuanto
+  haces otra. Los videos llevan un ▶. Tocarla la abre en Galería, igual que antes.
+- **«Más» con todos los modos y sus iconos**: Video, Foto, Retrato, Noche, Pro y Documentos. Arriba a la derecha puedes
+  verlos **como lista**, con lo que hace cada uno, o como cuadrícula (se recuerda), y el engranaje abre **Ajustes**.
+- **Iconos nuevos**: 3D (el de fábrica), Óleo, Píxel, Lente y Dulce, en Ajustes › Icono de la app. Se quitan los
+  anteriores; si tenías uno elegido, pasa solo al nuevo que ocupa su lugar.
+- 15 pruebas.
+
 # Cámara 0.2.2
 
 - **«Oye Lucía, toma una foto»**: después de tu «sí», Cámara se abre con una cuenta atrás de 3 segundos que un toque
