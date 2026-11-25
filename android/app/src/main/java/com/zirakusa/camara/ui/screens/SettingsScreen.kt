@@ -2,7 +2,6 @@ package com.zirakusa.camara.ui.screens
 
 import com.zirakusa.camara.data.Timer
 import com.zirakusa.camara.IconCard
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,7 +33,7 @@ import com.zirakusa.camara.ui.CamaraState
 import com.zirakusa.camara.ui.theme.CamaraColors
 
 /** «Ajustes»: grid, sound, volume buttons, watermark, video quality, sound and stabilizer, Modo MCP, Temas, privacy and version. */
-@Composable fun SettingsScreen(state: CamaraState) {
+@Composable fun SettingsScreen(state: CamaraState, openArka: () -> Unit = {}) {
     var privacy by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(CamaraColors.Background).systemBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -73,13 +72,12 @@ import com.zirakusa.camara.ui.theme.CamaraColors
         Caption(stringResource(R.string.mcp_title))
         Group {
             val status = when {
-                !McpMode.active -> stringResource(R.string.mcp_status_off)
-                McpMode.hubRedirect -> stringResource(R.string.mcp_redirect)
+                !McpMode.remote -> stringResource(R.string.mcp_status_off)
                 McpMode.state == RelayLink.State.ONLINE -> stringResource(R.string.mcp_online)
                 McpMode.state == RelayLink.State.CONNECTING -> stringResource(R.string.mcp_connecting)
                 else -> stringResource(R.string.mcp_offline)
             }
-            Item(stringResource(R.string.mcp_title), "$status · ${stringResource(R.string.mcp_settings_hint)}") { state.page = Page.MCP }
+            Item(stringResource(R.string.mcp_title), "$status · ${stringResource(R.string.mcp_settings_hint)}", onClick = openArka)
         }
         Caption(stringResource(R.string.personalization))
         IconCard(CamaraColors.Card, CamaraColors.Text, CamaraColors.Muted, CamaraColors.Accent)

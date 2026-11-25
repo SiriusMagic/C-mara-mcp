@@ -25,7 +25,7 @@ import com.zirakusa.camara.ui.theme.ThemeMode
 import kotlinx.coroutines.delay
 
 /** The camera, or a page over it. */
-enum class Page { CAMERA, SETTINGS, MCP }
+enum class Page { CAMERA, SETTINGS }
 
 /** What is open over the camera: the quick settings (˅), the flash choices, the «Más» modes, or nothing. */
 enum class Panel { NONE, QUICK, FLASH, MORE }
@@ -66,7 +66,7 @@ class CamaraState(private val kv: KeyValues, private val launch: (suspend () -> 
     /** Seconds left on the self-timer, or null. */
     var countdown by mutableStateOf<Int?>(null); private set
     /** How long the running countdown is in all (for the ring that fills around the number). */
-    var countdownFrom by mutableStateOf(0); private set
+    var countdownFrom by mutableIntStateOf(0); private set
     /** Called each second of the countdown with the seconds left (the activity beeps when the sound is on). */
     var tick: (Int) -> Unit = {}
     /** The phone lets Cámara use the back and the front camera at once (for «Video dual»); null until the camera says. */

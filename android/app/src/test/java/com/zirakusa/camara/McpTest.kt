@@ -8,7 +8,6 @@ import com.zirakusa.camara.data.Shots
 import com.zirakusa.camara.mcp.Access
 import com.zirakusa.camara.mcp.CameraData
 import com.zirakusa.camara.mcp.HubLink
-import com.zirakusa.camara.mcp.Kind
 import com.zirakusa.camara.mcp.McpHandler
 import com.zirakusa.camara.mcp.Token
 import kotlinx.coroutines.runBlocking
@@ -32,10 +31,9 @@ class McpTest {
         override val shots = Shots(kv)
         override fun zone() = ZoneOffset.UTC
     }
-    private val writer = Token("w", "Claude", "cam_" + "w".repeat(40), Access.WRITE, Kind.HUB, "Cámara")
-    private val reader = Token("r", "Lector", "cam_" + "r".repeat(40), Access.READ)
-    private val paused = Token("p", "Viejo", "cam_" + "p".repeat(40), Access.WRITE, paused = true)
-    private val handler = McpHandler({ listOf(writer, reader, paused) }, data, "0.1.0")
+    private val writer = Token("cam_" + "w".repeat(40), Access.WRITE)
+    private val reader = Token("cam_" + "r".repeat(40), Access.READ)
+    private val handler = McpHandler({ listOf(writer, reader) }, data, "0.1.0")
 
     init {
         data.shots.add(Shot(0, "content://media/1", "IMG_20231114_221320.jpg", Mode.PHOTO, 1_700_000_000_000))
@@ -96,30 +94,40 @@ class McpTest {
 
     @Test fun wrongAndPausedTokensAndHubLink() = runBlocking {
         val body = """{"jsonrpc":"2.0","id":1,"method":"tools/list"}"""
-        assertEquals(401, handler.handle("POST", "/mcp", mapOf("Authorization" to "Bearer ${paused.secret}"), emptyMap(), body).status)
+        assertEquals(401, handler.handle("POST", "/mcp", mapOf("Authorization" to "Bearer wrong_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"), emptyMap(), body).status)
         assertEquals(401, handler.handle("POST", "/mcp", mapOf("Authorization" to "Bearer cam_wrong"), emptyMap(), body).status)
         assertTrue(Token.secret().startsWith("cam_"))
         assertEquals("NOT_SAME_DEVELOPER", HubLink.answer(false).getString("error"))
         assertEquals("REDIRECT_OFF", HubLink.answer(true).getString("error"))
-        // «Conectar todas» and Lucía's tools: only for the same developer, and tools only with «Redireccionar a Hub» on.
         assertEquals("NOT_SAME_DEVELOPER", HubLink.connect(false).getString("error"))
         assertEquals("NOT_SAME_DEVELOPER", HubLink.tool(false, "{}").getString("error"))
-        assertEquals("REDIRECT_OFF", HubLink.tool(true, "{}").getString("error"))
+        // Only the same developer (Arka) may connect, disconnect, read the status or run a tool.
+        listOf(HubLink.disconnect(false), HubLink.status(false)).forEach { assertEquals("NOT_SAME_DEVELOPER", it.getString("error")) }
     }
 
-    /** Lucía runs a tool on the phone through the same handler, only while «Redireccionar a Hub» is on. */
+    /** Lucía runs a tool on the phone through the same handler, with or without the public link; Arka turns that on and off. */
     @Test fun luciaRunsToolsOnThePhone() {
         val relay = com.zirakusa.camara.mcp.McpMode.relayUrl
         com.zirakusa.camara.mcp.McpMode.relayUrl = ""                                             // no relay in tests
         com.zirakusa.camara.mcp.McpMode.load(org.robolectric.RuntimeEnvironment.getApplication())
-        com.zirakusa.camara.mcp.McpMode.redirect(false)
-        assertEquals(null, com.zirakusa.camara.mcp.McpMode.local("{}"))
-        HubLink.connect(true); assertTrue(com.zirakusa.camara.mcp.McpMode.hubRedirect)                // «Conectar todas»
+        com.zirakusa.camara.mcp.McpMode.turnRemote(false)
         val list = JSONObject(com.zirakusa.camara.mcp.McpMode.local("""{"jsonrpc":"2.0","id":1,"method":"tools/list"}""")!!)
         assertTrue(list.getJSONObject("result").getJSONArray("tools").length() > 0)
         val viaProvider = JSONObject(HubLink.tool(true, """{"jsonrpc":"2.0","id":2,"method":"tools/list"}""").getString("response"))
         assertEquals(2, viaProvider.getInt("id"))
-        com.zirakusa.camara.mcp.McpMode.redirect(false)
+        assertEquals("BAD_REQUEST", HubLink.tool(true, "").getString("error"))
+        assertEquals("NOT_SAME_DEVELOPER", HubLink.tool(false, "{}").getString("error"))
+        assertTrue(HubLink.status(true).containsKey("remote"))
+        HubLink.connect(true); assertTrue(com.zirakusa.camara.mcp.McpMode.remote)                 // Arka › «Activar MCP»
+        assertFalse(HubLink.disconnect(true).getBoolean("remote")); assertFalse(com.zirakusa.camara.mcp.McpMode.remote)
         com.zirakusa.camara.mcp.McpMode.relayUrl = relay                                          // as the other tests expect
+    }
+
+    /** The hub's token from before Arka took over is kept, so the hub's link keeps working. */
+    @Test fun theOldHubTokenIsKept() {
+        val old = """[{"id":"a","secret":"${"l".repeat(44)}","kind":"llm"},{"id":"b","secret":"${"h".repeat(44)}","kind":"redirect"}]"""
+        assertEquals("h".repeat(44), com.zirakusa.camara.mcp.Legacy.redirectSecret(old))
+        assertEquals(null, com.zirakusa.camara.mcp.Legacy.redirectSecret("[]"))
+        assertEquals(null, com.zirakusa.camara.mcp.Legacy.redirectSecret(""))
     }
 }

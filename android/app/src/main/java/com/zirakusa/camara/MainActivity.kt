@@ -65,7 +65,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { snapshotFlow { state.zoom }.collect(camera::zoom) }
         lifecycleScope.launch { snapshotFlow { listOf(state.ev, state.iso, state.shutter, state.balance, state.stabilization) }.collect { camera.tune() } }
         val actions = AppActions(preview = { m -> Preview(m) },
-            allow = ::ask, openLast = ::openLast, thumbnail = ::thumbnail, copyLink = ::copyLink, goToHub = ::goToHub)
+            allow = ::ask, openLast = ::openLast, thumbnail = ::thumbnail, openArka = ::openArka)
         permissions()
         if (!state.cameraAllowed) ask()
         setContent {
@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
                 // The camera is always dark: light bars on it.
                 SideEffect { WindowCompat.getInsetsController(window, window.decorView).run { isAppearanceLightStatusBars = false; isAppearanceLightNavigationBars = false } }
                 BackHandler(state.page != Page.CAMERA || state.panel != Panel.NONE) {
-                    if (state.page == Page.CAMERA) state.panel = Panel.NONE else state.page = if (state.page == Page.MCP) Page.SETTINGS else Page.CAMERA
+                    if (state.page == Page.CAMERA) state.panel = Panel.NONE else state.page = Page.CAMERA
                 }
                 CamaraApp(state, actions)
             }
@@ -155,16 +155,11 @@ class MainActivity : ComponentActivity() {
             bitmap?.asImageBitmap()
         }
 
-    private fun copyLink(link: String) {
-        getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Cámara MCP", link))
-        Toast.makeText(this, R.string.copied, Toast.LENGTH_SHORT).show()
-    }
 
-    /** «Ir al Hub»: copies the hub's link (in case it must be pasted) and opens the Gateway Hub app. */
-    private fun goToHub() {
-        getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Cámara › Gateway Hub", McpMode.hubLink()))
-        val hub = packageManager.getLaunchIntentForPackage("com.zirakusa.gatewayhub")
-        if (hub != null) startActivity(hub) else Toast.makeText(this, R.string.mcp_paste_in_hub, Toast.LENGTH_LONG).show()
+    /** «Modo MCP» in Ajustes: it is turned on, allowed on the phone and given tokens in Arka, so this opens Arka. */
+    private fun openArka() {
+        val open = packageManager.getLaunchIntentForPackage("com.zirakusa.gatewayhub")
+        if (open != null) startActivity(open) else Toast.makeText(this, R.string.mcp_no_arka, Toast.LENGTH_LONG).show()
     }
 
     companion object { const val LUMA = "app.luma.gallery"; const val CAPTURE = "com.zirakusa.family.action.CAPTURE" }
