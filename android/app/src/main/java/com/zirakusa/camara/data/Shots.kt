@@ -11,7 +11,7 @@ enum class Mode(val key: String) { PHOTO("photo"), VIDEO("video") }
 /** [TORCH] keeps the light on («Linterna»), also while recording. */
 enum class Flash(val key: String) { OFF("off"), AUTO("auto"), ON("on"), TORCH("torch") }
 /** The self-timer in seconds. */
-enum class Timer(val key: String, val seconds: Int) { OFF("off", 0), S3("3", 3), S10("10", 10) }
+enum class Timer(val key: String, val seconds: Int) { OFF("off", 0), S3("3", 3), S5("5", 5), S10("10", 10) }
 /** 1:1 is taken as 4:3 and its middle square kept. */
 enum class Ratio(val key: String, val w: Int, val h: Int) { R4_3("4:3", 3, 4), R16_9("16:9", 9, 16), R1_1("1:1", 1, 1) }
 enum class Quality(val key: String, val label: String) { HD("hd", "HD 720p"), FHD("fhd", "Full HD 1080p"), UHD("uhd", "4K") }

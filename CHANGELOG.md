@@ -1,3 +1,16 @@
+# Cámara 0.4.0
+
+- **Video dual** (en «Más»): graba con la cámara trasera y la frontal **a la vez**, en pantalla dividida, en **un solo
+  video** que va a la galería. Lo que ves en la pantalla es lo que se graba. Se graba en HD (720p), lo más que permiten
+  casi todos los teléfonos con dos cámaras a la vez. Solo en teléfonos que dejan usar las dos cámaras juntas; si el tuyo
+  no, «Video dual» aparece atenuado y lo explica.
+- **Ajustes siempre a mano**: un engranaje en la barra de arriba (además del panel ˅ y de «Más»).
+- **Ajustes › Temporizador**: No, 3 s, **5 s** o 10 s antes de la foto o del video. La cuenta atrás se ve en grande con un
+  aro que se llena, suena un pitido cada segundo si el sonido está activado, y tocar el disparador la cancela.
+- **Ajustes por secciones**: Foto, Temporizador, Video, **Modo MCP** y **Personalización** (icono y tema). Por MCP también
+  se puede poner el temporizador de 5 s (`camera_settings_set`).
+- 17 pruebas.
+
 # Cámara 0.3.0
 
 - **La miniatura muestra tu última foto o video** (junto al disparador), como la cámara del teléfono, y cambia en cuanto

@@ -94,6 +94,15 @@
     <string name="scene_document_hint">Papeles y pizarras más nítidos y en blanco y negro, dentro del marco.</string>
     <string name="more_list">Ver como lista</string>
     <string name="more_grid">Ver como cuadrícula</string>
+    <string name="scene_dual">Video dual</string>
+    <string name="scene_dual_hint">Graba con la cámara trasera y la frontal a la vez, en pantalla dividida, en un solo video.</string>
+    <string name="dual_unavailable">Tu teléfono no deja usar las dos cámaras a la vez.</string>
+    <string name="dual_failed">No se pudieron abrir las dos cámaras a la vez. Vuelve a Video.</string>
+    <string name="timer_use">Cuenta atrás antes de la foto o del video</string>
+    <string name="timer_off">No</string>
+    <string name="timer_hint">Se ve en grande en la pantalla, con un pitido cada segundo si el sonido está activado. Toca el disparador para cancelarla.</string>
+    <string name="countdown_cancel">Toca el disparador para cancelar</string>
+    <string name="personalization">Personalización</string>
     <string name="more_hint">Más modos</string>
     <string name="quick">Ajustes rápidos</string>
     <string name="hdr">HDR</string>

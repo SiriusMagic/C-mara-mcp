@@ -1,5 +1,7 @@
 package com.zirakusa.camara.ui.screens
 
+import androidx.compose.ui.draw.alpha
+import androidx.compose.material.icons.outlined.ViewAgenda
 import com.zirakusa.camara.ui.Page
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -56,6 +58,7 @@ import com.zirakusa.camara.ui.theme.CamaraColors
 fun sceneName(s: Scene) = when (s) {
     Scene.VIDEO -> R.string.scene_video; Scene.PHOTO -> R.string.scene_photo; Scene.PORTRAIT -> R.string.scene_portrait
     Scene.NIGHT -> R.string.scene_night; Scene.PRO -> R.string.scene_pro; Scene.DOCUMENT -> R.string.scene_document
+    Scene.DUAL -> R.string.scene_dual
 }
 
 fun colorName(c: ColorStyle) = when (c) {
@@ -71,13 +74,18 @@ private fun balanceName(b: Balance) = when (b) {
 private fun sceneIcon(s: Scene): ImageVector = when (s) {
     Scene.VIDEO -> Icons.Outlined.Videocam; Scene.PHOTO -> Icons.Outlined.PhotoCamera; Scene.PORTRAIT -> Icons.Outlined.Portrait
     Scene.NIGHT -> Icons.Outlined.NightsStay; Scene.PRO -> Icons.Outlined.Tune; Scene.DOCUMENT -> Icons.Outlined.DocumentScanner
+    Scene.DUAL -> Icons.Outlined.ViewAgenda
 }
 
 /** What each mode is for, under its name in «Más» (list view). */
 private fun sceneHint(s: Scene) = when (s) {
     Scene.VIDEO -> R.string.scene_video_hint; Scene.PHOTO -> R.string.scene_photo_hint; Scene.PORTRAIT -> R.string.scene_portrait_hint
     Scene.NIGHT -> R.string.scene_night_hint; Scene.PRO -> R.string.scene_pro_hint; Scene.DOCUMENT -> R.string.scene_document_hint
+    Scene.DUAL -> R.string.scene_dual_hint
 }
+
+/** A mode this phone can't do (only «Video dual», on phones that can't use both cameras at once): shown dimmed, with why. */
+private fun CamaraState.cannot(s: Scene) = s == Scene.DUAL && dualAvailable == false
 
 /** VIDEO · FOTO · RETRATO · NOCHE (and the «Más» mode in use), then ≡ for «Más». */
 @Composable fun ModeStrip(state: CamaraState) = Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -100,17 +108,19 @@ private fun sceneHint(s: Scene) = when (s) {
  * «Más»: every mode with its icon, over a dark veil, in a grid or (top-right button) a list that says what each one is
  * for; the gear opens Ajustes. The view chosen is remembered. A tap outside closes it.
  */
-@Composable fun MoreSheet(state: CamaraState) = Box(Modifier.fillMaxSize().background(Color(0xCC000000)).clickable { state.panel = Panel.NONE }) {
+@Composable fun MoreSheet(state: CamaraState) = Box(Modifier.fillMaxSize().background(Color(if (state.moreAsList) 0xF0000000 else 0xCC000000)).clickable { state.panel = Panel.NONE }) {
     if (state.moreAsList) Column(Modifier.align(Alignment.Center).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 72.dp, bottom = 150.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Scene.entries.forEach { s ->
             val on = s == state.scene
-            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Color(0x22FFFFFF)).clickable { state.changeScene(s); state.panel = Panel.NONE }
+            val off = state.cannot(s)
+            Row(Modifier.fillMaxWidth().alpha(if (off) 0.45f else 1f).clip(RoundedCornerShape(20.dp)).background(Color(0x22FFFFFF))
+                .clickable(enabled = !off) { state.changeScene(s); state.panel = Panel.NONE }
                 .padding(horizontal = 18.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                 Icon(sceneIcon(s), null, Modifier.size(30.dp), tint = if (on) CamaraColors.Accent else White)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(sceneName(s)).uppercase(), color = if (on) CamaraColors.Accent else White, fontSize = 17.sp)
-                    Text(stringResource(sceneHint(s)), color = Color(0xB3FFFFFF), fontSize = 14.sp)
+                    Text(stringResource(if (off) R.string.dual_unavailable else sceneHint(s)), color = Color(0xB3FFFFFF), fontSize = 14.sp)
                 }
             }
         }
@@ -119,7 +129,8 @@ private fun sceneHint(s: Scene) = when (s) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { s ->
                     val on = s == state.scene
-                    Column(Modifier.width(116.dp).clip(RoundedCornerShape(16.dp)).clickable { state.changeScene(s); state.panel = Panel.NONE }.padding(10.dp),
+                    Column(Modifier.width(116.dp).alpha(if (state.cannot(s)) 0.45f else 1f).clip(RoundedCornerShape(16.dp))
+                        .clickable(enabled = !state.cannot(s)) { state.changeScene(s); state.panel = Panel.NONE }.padding(10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Icon(sceneIcon(s), null, Modifier.size(36.dp), tint = if (on) CamaraColors.Accent else White)
                         Text(stringResource(sceneName(s)).uppercase(), color = if (on) CamaraColors.Accent else White, fontSize = 13.sp, textAlign = TextAlign.Center, maxLines = 1, softWrap = false)

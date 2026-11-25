@@ -1,5 +1,7 @@
 package com.zirakusa.camara
 
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
@@ -66,6 +68,9 @@ class ScreenshotsTest {
         state.page = Page.SETTINGS
         compose.onNodeWithText("Botones de volumen").assertExists()
         shot("settings")
+        compose.onNodeWithText("5 s").performScrollTo().performClick(); assertEquals(com.zirakusa.camara.data.Timer.S5, state.timer)   // Ajustes › Temporizador
+        compose.onNodeWithText("Personalización").performScrollTo().assertExists()
+        shot("settings-timer")
         state.page = Page.CAMERA; state.changeMode(Mode.PHOTO)
         compose.onNodeWithContentDescription("Ajustes rápidos").performClick()
         compose.onNodeWithText("Marca de agua").performScrollTo().performClick(); assertEquals(true, state.watermark)
@@ -77,7 +82,9 @@ class ScreenshotsTest {
         compose.onNodeWithContentDescription("Ver como lista").performClick(); assertEquals(true, state.moreAsList)
         compose.onNodeWithText("Elige tú la exposición, el ISO, el obturador y el balance de blancos.").assertExists()
         shot("more-list")
-        compose.onNodeWithContentDescription("Ajustes").performClick(); assertEquals(Page.SETTINGS, state.page)
+        compose.onAllNodesWithContentDescription("Ajustes").onLast().performClick(); assertEquals(Page.SETTINGS, state.page)   // the sheet's gear
+        state.page = Page.CAMERA; state.panel = com.zirakusa.camara.ui.Panel.NONE
+        compose.onNodeWithContentDescription("Ajustes").performClick(); assertEquals(Page.SETTINGS, state.page)          // the gear on the top bar
         state.page = Page.CAMERA
         compose.onNodeWithContentDescription("Más modos").performClick()
         compose.onNodeWithText("PRO").performClick()

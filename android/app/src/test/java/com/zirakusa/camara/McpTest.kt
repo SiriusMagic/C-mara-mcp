@@ -76,6 +76,7 @@ class McpTest {
 
     @Test fun badArgumentsChangeNothing() {
         assertEquals("BAD_ARGUMENT", code("camera_settings_set", JSONObject().put("flash", "auto").put("timer", "7")))
+        assertEquals("5", ok("camera_settings_set", JSONObject().put("timer", "5")).getString("timer"))     // Ajustes › Temporizador, 5 s
         assertEquals("off", data.settings.flash.key)                                              // checked before changing
         assertEquals("BAD_ARGUMENT", code("camera_settings_set", JSONObject()))
         assertEquals("BAD_ARGUMENT", code("camera_settings_set", JSONObject().put("grid", "yes")))

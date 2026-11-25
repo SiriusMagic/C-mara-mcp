@@ -73,13 +73,15 @@ private fun CamaraState.showHdr() = scene == Scene.PHOTO && hdrAvailable
     if (!video && state.showHdr()) Top(if (state.hdr) Icons.Outlined.HdrOn else Icons.Outlined.HdrOff, stringResource(R.string.hdr), state.hdr) { state.changeHdr(!state.hdr) }
     if (state.recording) Text("● " + com.zirakusa.camara.data.Lens.clock(state.recorded), Modifier.clip(CircleShape).background(Red).padding(horizontal = 14.dp, vertical = 6.dp), color = White, fontSize = 16.sp)
     else Top(if (state.panel == Panel.QUICK) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, stringResource(R.string.quick), state.panel == Panel.QUICK) { state.toggle(Panel.QUICK) }
-    if (video) {
+    if (video && state.scene != Scene.DUAL) {
         Top(Icons.Outlined.VideoStable, stringResource(R.string.stabilization), state.stabilization) { state.changeStabilization(!state.stabilization) }
         TextButton(state.quality.short(), stringResource(R.string.quality), state::nextQuality)
-    } else {
+    } else if (!video) {
         Top(Icons.Outlined.Palette, stringResource(R.string.color_style), state.color != com.zirakusa.camara.data.ColorStyle.NATURAL, onClick = state::nextColor)
         TextButton(state.ratio.key, stringResource(R.string.ratio), state::nextRatio)
     }
+    // Ajustes, always at hand (also in the ˅ panel and in «Más»).
+    Top(Icons.Outlined.Settings, stringResource(R.string.settings), false) { state.panel = Panel.NONE; state.page = Page.SETTINGS }
 }
 
 @Composable private fun Top(icon: ImageVector, label: String, on: Boolean, onClick: () -> Unit) =

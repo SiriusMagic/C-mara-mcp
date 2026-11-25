@@ -98,6 +98,15 @@
     <string name="scene_document_hint">Sharper papers and whiteboards in black and white, inside the frame.</string>
     <string name="more_list">Show as list</string>
     <string name="more_grid">Show as grid</string>
+    <string name="scene_dual">Dual video</string>
+    <string name="scene_dual_hint">Records with the back and the front camera at once, split screen, in one video.</string>
+    <string name="dual_unavailable">Your phone can\'t use both cameras at once.</string>
+    <string name="dual_failed">Couldn\'t open both cameras at once. Back to Video.</string>
+    <string name="timer_use">Countdown before the photo or video</string>
+    <string name="timer_off">Off</string>
+    <string name="timer_hint">Shown big on the screen, with a beep each second when the sound is on. Tap the shutter to cancel it.</string>
+    <string name="countdown_cancel">Tap the shutter to cancel</string>
+    <string name="personalization">Personalization</string>
     <string name="more_hint">More modes</string>
     <string name="quick">Quick settings</string>
     <string name="hdr">HDR</string>

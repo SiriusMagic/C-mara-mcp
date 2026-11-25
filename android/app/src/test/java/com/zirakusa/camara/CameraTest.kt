@@ -2,6 +2,7 @@ package com.zirakusa.camara
 
 import com.zirakusa.camara.data.Balance
 import com.zirakusa.camara.data.ColorStyle
+import com.zirakusa.camara.data.Dual
 import com.zirakusa.camara.data.Flash
 import com.zirakusa.camara.data.Pixels
 import com.zirakusa.camara.data.Portrait
@@ -140,5 +141,28 @@ class CameraTest {
         assertEquals(listOf(Mode.PHOTO), shot); assertEquals(Scene.PHOTO, state.scene); assertTrue(state.front)
         state.changeScene(Scene.VIDEO); state.press(); state.started()
         state.voiceCapture(selfie = false); assertEquals(Mode.VIDEO, shot.last()); assertEquals(2, shot.size)   // recording: untouched
+    }
+
+    /** Ajustes › Temporizador: off, 3, 5 or 10 s; the countdown says each second (for the beep) and fills its ring. */
+    @Test fun timerCountsEverySecond() = runBlocking {
+        val kv = MapValues()
+        val state = CamaraState(kv, launch = { runBlocking { it() } })
+        val ticks = mutableListOf<Int>(); val taken = mutableListOf<Mode>()
+        state.tick = { ticks += it }; state.shoot = { taken += it }; state.cameraAllowed = true
+        assertEquals(listOf("off", "3", "5", "10"), Timer.entries.map { it.key })
+        state.changeTimer(Timer.S5); assertEquals(Timer.S5, CamaraState(kv).timer)           // remembered
+        state.press()
+        assertEquals(listOf(5, 4, 3, 2, 1), ticks); assertEquals(5, state.countdownFrom); assertNull(state.countdown); assertEquals(listOf(Mode.PHOTO), taken)
+    }
+
+    /** «Video dual»: only with a back and a front camera the phone can open together; never chosen when it can't. */
+    @Test fun dualVideo() {
+        assertTrue(Dual.possible(listOf(listOf(Dual.BACK, Dual.FRONT))))
+        assertFalse(Dual.possible(emptyList())); assertFalse(Dual.possible(listOf(listOf(Dual.BACK, Dual.BACK), listOf(Dual.FRONT, null))))
+        assertEquals(Dual.SCALE, Dual.OFFSET)                                                    // two halves, nobody stretched
+        val state = CamaraState(MapValues())
+        state.dualAvailable = false; state.changeScene(Scene.DUAL); assertEquals(Scene.PHOTO, state.scene)
+        state.dualAvailable = true; state.changeScene(Scene.DUAL); assertEquals(Scene.DUAL, state.scene); assertEquals(Mode.VIDEO, state.mode)
+        val front = state.front; state.flip(); assertEquals(front, state.front)                 // both cameras are already on
     }
 }

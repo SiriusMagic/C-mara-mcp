@@ -86,7 +86,7 @@ class MainActivity : ComponentActivity() {
         val effect = if (Build.VERSION.SDK_INT >= 31 && style != ColorStyle.NATURAL) colorEffect(style.matrix) else null
         val look = if (effect != null) modifier.graphicsLayer { renderEffect = effect } else modifier
         // TextureView (COMPATIBLE) so the colour style can be drawn over the picture.
-        AndroidView({ PreviewView(it).apply { implementationMode = PreviewView.ImplementationMode.COMPATIBLE; controller = camera.controller } }, look)
+        AndroidView({ PreviewView(it).apply { implementationMode = PreviewView.ImplementationMode.COMPATIBLE; camera.view = this } }, look)
     }
 
     @RequiresApi(31) private fun colorEffect(m: FloatArray) = RenderEffect.createColorFilterEffect(ColorMatrixColorFilter(m)).asComposeRenderEffect()

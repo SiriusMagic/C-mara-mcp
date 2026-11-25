@@ -1,5 +1,6 @@
 package com.zirakusa.camara.ui.screens
 
+import com.zirakusa.camara.data.Timer
 import com.zirakusa.camara.IconCard
 
 import androidx.compose.foundation.background
@@ -48,6 +49,16 @@ import com.zirakusa.camara.ui.theme.CamaraColors
             Divider()
             SwitchItem(stringResource(R.string.watermark), stringResource(R.string.watermark_hint), state.watermark, onChange = state::changeWatermark)
         }
+        Caption(stringResource(R.string.timer))
+        Group {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stringResource(R.string.timer_use), fontSize = 18.sp)
+                Segmented(Timer.entries.map { if (it == Timer.OFF) stringResource(R.string.timer_off) else "${it.seconds} s" }, state.timer.ordinal, Modifier.fillMaxWidth()) {
+                    state.changeTimer(Timer.entries[it])
+                }
+                Text(stringResource(R.string.timer_hint), color = CamaraColors.Muted, fontSize = 14.sp)
+            }
+        }
         Caption(stringResource(R.string.video))
         Group {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -59,6 +70,7 @@ import com.zirakusa.camara.ui.theme.CamaraColors
             Divider()
             SwitchItem(stringResource(R.string.stabilization), stringResource(R.string.stabilization_hint), state.stabilization, onChange = state::changeStabilization)
         }
+        Caption(stringResource(R.string.mcp_title))
         Group {
             val status = when {
                 !McpMode.active -> stringResource(R.string.mcp_status_off)
@@ -69,6 +81,7 @@ import com.zirakusa.camara.ui.theme.CamaraColors
             }
             Item(stringResource(R.string.mcp_title), "$status · ${stringResource(R.string.mcp_settings_hint)}") { state.page = Page.MCP }
         }
+        Caption(stringResource(R.string.personalization))
         IconCard(CamaraColors.Card, CamaraColors.Text, CamaraColors.Muted, CamaraColors.Accent)
         ThemeCard(state.themeMode, state.accent, state::changeTheme, state::changeAccent)
         Caption(stringResource(R.string.about))

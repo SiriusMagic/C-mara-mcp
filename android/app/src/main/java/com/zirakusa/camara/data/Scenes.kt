@@ -13,7 +13,9 @@ enum class Scene(val key: String, val kind: Mode, val main: Boolean) {
     PORTRAIT("portrait", Mode.PHOTO, true),
     NIGHT("night", Mode.PHOTO, true),
     PRO("pro", Mode.PHOTO, false),
-    DOCUMENT("document", Mode.PHOTO, false);
+    DOCUMENT("document", Mode.PHOTO, false),
+    /** «Video dual»: the back and the front camera at once, split screen, in one video (phones that allow both at once). */
+    DUAL("dual", Mode.VIDEO, false);
 
     companion object {
         val strip = entries.filter { it.main }

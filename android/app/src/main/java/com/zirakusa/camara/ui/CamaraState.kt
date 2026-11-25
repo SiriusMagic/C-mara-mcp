@@ -65,6 +65,12 @@ class CamaraState(private val kv: KeyValues, private val launch: (suspend () -> 
     val focals get() = Portrait.steps(zoomMax)
     /** Seconds left on the self-timer, or null. */
     var countdown by mutableStateOf<Int?>(null); private set
+    /** How long the running countdown is in all (for the ring that fills around the number). */
+    var countdownFrom by mutableStateOf(0); private set
+    /** Called each second of the countdown with the seconds left (the activity beeps when the sound is on). */
+    var tick: (Int) -> Unit = {}
+    /** The phone lets Cámara use the back and the front camera at once (for «Video dual»); null until the camera says. */
+    var dualAvailable by mutableStateOf<Boolean?>(null)
     var recording by mutableStateOf(false); private set
     var recorded by mutableLongStateOf(0L)
     var last by mutableStateOf(shots.list().firstOrNull()); private set
@@ -111,7 +117,8 @@ class CamaraState(private val kv: KeyValues, private val launch: (suspend () -> 
             countdown != null -> countdown = null
             seconds == 0 -> shoot(mode)
             else -> launch {
-                for (left in seconds downTo 1) { countdown = left; delay(1000); if (countdown == null) return@launch }
+                countdownFrom = seconds
+                for (left in seconds downTo 1) { countdown = left; tick(left); delay(1000); if (countdown == null) return@launch }
                 countdown = null; shoot(mode)
             }
         }
@@ -134,10 +141,11 @@ class CamaraState(private val kv: KeyValues, private val launch: (suspend () -> 
     /** Another mode (not while recording or counting down). Retrato starts at 24 mm. */
     fun changeScene(s: Scene) {
         if (recording || countdown != null) return
+        if (s == Scene.DUAL && dualAvailable == false) return            // this phone can't use both cameras at once
         if (s != scene) { scene = s; settings.scene = s; zoom = 1f }
         panel = Panel.NONE
     }
-    fun flip() { if (!recording) { front = !front; zoom = 1f } }
+    fun flip() { if (!recording && scene != Scene.DUAL) { front = !front; zoom = 1f } }
     /** The panel opens, or closes if it was open. */
     fun toggle(p: Panel) { panel = if (panel == p) Panel.NONE else p }
     fun zoomTo(r: Float) { zoom = r.coerceIn(zoomMin, zoomMax) }

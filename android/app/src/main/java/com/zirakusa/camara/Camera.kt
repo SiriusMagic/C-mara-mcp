@@ -1,5 +1,16 @@
 package com.zirakusa.camara
 
+import com.zirakusa.camara.data.Dual
+import androidx.camera.view.PreviewView
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.Recorder
+import androidx.camera.core.UseCaseGroup
+import androidx.camera.core.Preview
+import androidx.camera.core.ConcurrentCamera
+import androidx.camera.core.CompositionSettings
+import android.widget.Toast
+import android.media.ToneGenerator
+import android.media.AudioManager
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ContentValues
@@ -60,6 +71,14 @@ class Camera(private val activity: ComponentActivity, private val state: CamaraS
     private var recording: Recording? = null
     private var extensions: ExtensionsManager? = null
     private var boundControl: CameraControl? = null
+    private var provider: ProcessCameraProvider? = null
+    /** The on-screen picture; «Video dual» shows the two cameras' joined picture on it instead of the controller's. */
+    var view: PreviewView? = null
+        set(v) { field = v; if (dualCapture != null) dualPreview?.surfaceProvider = v?.surfaceProvider else v?.controller = controller }
+    /** While «Video dual» is on: its picture and its recorder (both cameras joined by CameraX), else null. */
+    private var dualPreview: Preview? = null
+    private var dualCapture: VideoCapture<Recorder>? = null
+    private val beep = runCatching { ToneGenerator(AudioManager.STREAM_SYSTEM, 70) }.getOrNull()
 
     init {
         controller.zoomState.observe(activity) { z ->
@@ -71,9 +90,14 @@ class Camera(private val activity: ComponentActivity, private val state: CamaraS
         controller.bindToLifecycle(activity)
         state.shoot = { if (it == Mode.PHOTO) photo() else startVideo() }
         state.stop = { recording?.stop(); recording = null }
+        state.tick = { if (state.sound) beep?.startTone(ToneGenerator.TONE_PROP_BEEP, 120) }
         val provider = ProcessCameraProvider.getInstance(activity)
         provider.addListener({
-            val manager = runCatching { ExtensionsManager.getInstanceAsync(activity, provider.get()) }.getOrNull() ?: return@addListener
+            val p = runCatching { provider.get() }.getOrNull() ?: return@addListener
+            this.provider = p
+            state.dualAvailable = runCatching { Dual.possible(p.availableConcurrentCameraInfos.map { set -> set.map { it.lensFacing } }) }.getOrDefault(false)
+            if (state.scene == Scene.DUAL) bind()
+            val manager = runCatching { ExtensionsManager.getInstanceAsync(activity, p) }.getOrNull() ?: return@addListener
             manager.addListener({ extensions = runCatching { manager.get() }.getOrNull(); available(); bind() }, main)
         }, main)
         bind()
@@ -99,6 +123,8 @@ class Camera(private val activity: ComponentActivity, private val state: CamaraS
     /** Binds the right camera for the mode: video or photo, with or without the maker's processing. */
     fun bind() {
         if (recording != null) return
+        if (state.scene == Scene.DUAL) return bindDual()
+        if (dualCapture != null) unbindDual()
         available()
         val ext = extensionFor()
         val video = state.mode == Mode.VIDEO
@@ -110,9 +136,52 @@ class Camera(private val activity: ComponentActivity, private val state: CamaraS
         flash(); tune()
     }
 
-    fun zoom(ratio: Float) { if (kotlin.math.abs((controller.zoomState.value?.zoomRatio ?: 1f) - ratio) > 0.01f) controller.setZoomRatio(ratio) }
+    /**
+     * «Video dual»: both cameras at once (CameraX's concurrent cameras), the back one on one half and the front one on the
+     * other, joined into one picture and one video. Only on phones that allow it; otherwise back to Video.
+     */
+    private fun bindDual() {
+        val p = provider ?: return                                     // the camera isn't ready yet: bound when it is
+        if (state.dualAvailable != true) { state.changeScene(Scene.VIDEO); return }
+        if (dualCapture != null) return
+        view?.controller = null
+        controller.unbind()
+        val preview = Preview.Builder().build()
+        // Two cameras at once allow at most HD on most phones.
+        val capture = VideoCapture.withOutput(Recorder.Builder()
+            .setQualitySelector(QualitySelector.from(VideoQuality.HD, FallbackStrategy.lowerQualityOrHigherThan(VideoQuality.SD))).build())
+        val group = UseCaseGroup.Builder().addUseCase(preview).addUseCase(capture).build()
+        fun half(top: Boolean) = CompositionSettings.Builder().setAlpha(1f).setOffset(0f, if (top) Dual.OFFSET else -Dual.OFFSET)
+            .setScale(Dual.SCALE, Dual.SCALE).build()
+        val ok = runCatching {
+            p.bindToLifecycle(listOf(
+                ConcurrentCamera.SingleCameraConfig(CameraSelector.DEFAULT_BACK_CAMERA, group, half(top = true), activity),
+                ConcurrentCamera.SingleCameraConfig(CameraSelector.DEFAULT_FRONT_CAMERA, group, half(top = false), activity)))
+        }.isSuccess
+        if (!ok) {
+            runCatching { p.unbindAll() }; view?.controller = controller; controller.bindToLifecycle(activity)
+            state.dualAvailable = false; state.changeScene(Scene.VIDEO); Toast.makeText(activity, R.string.dual_failed, Toast.LENGTH_LONG).show()
+            return
+        }
+        dualPreview = preview; dualCapture = capture
+        preview.surfaceProvider = view?.surfaceProvider
+    }
+
+    /** Back from «Video dual» to the one camera the controller handles. */
+    private fun unbindDual() {
+        dualPreview?.surfaceProvider = null
+        dualPreview = null; dualCapture = null
+        runCatching { provider?.unbindAll() }
+        view?.controller = controller
+        controller.bindToLifecycle(activity)
+    }
+
+    fun zoom(ratio: Float) {
+        if (dualCapture != null) return
+        if (kotlin.math.abs((controller.zoomState.value?.zoomRatio ?: 1f) - ratio) > 0.01f) controller.setZoomRatio(ratio) }
 
     fun flash() {
+        if (dualCapture != null) return
         val f = state.flashNow
         controller.imageCaptureFlashMode = when (f) { Flash.AUTO -> ImageCapture.FLASH_MODE_AUTO; Flash.ON -> ImageCapture.FLASH_MODE_ON; else -> ImageCapture.FLASH_MODE_OFF }
         controller.enableTorch(f == Flash.TORCH)
@@ -212,19 +281,23 @@ class Camera(private val activity: ComponentActivity, private val state: CamaraS
         val out = MediaStoreOutputOptions.Builder(activity.contentResolver, MediaStore.Video.Media.EXTERNAL_CONTENT_URI).setContentValues(values(Mode.VIDEO, name)).build()
         val mic = state.audio && ContextCompat.checkSelfPermission(activity, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         if (state.sound) sound.play(MediaActionSound.START_VIDEO_RECORDING)
-        recording = controller.startRecording(out, AudioConfig.create(mic), main) { e ->
-            when (e) {
-                is VideoRecordEvent.Start -> state.started()
-                is VideoRecordEvent.Status -> state.recorded = e.recordingStats.recordedDurationNanos / 1_000_000_000
-                is VideoRecordEvent.Finalize -> {
-                    if (state.sound) sound.play(MediaActionSound.STOP_VIDEO_RECORDING)
-                    if (!e.hasError() || e.error == VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE)
-                        state.saved(Shot(0, e.outputResults.outputUri.toString(), name, Mode.VIDEO, System.currentTimeMillis(), e.recordingStats.recordedDurationNanos / 1_000_000_000))
-                    else state.failed()
-                }
+        val dual = dualCapture
+        recording = if (dual != null) dual.output.prepareRecording(activity, out).apply { if (mic) withAudioEnabled() }.start(main) { onVideo(it, name) }
+            else controller.startRecording(out, AudioConfig.create(mic), main) { onVideo(it, name) }
+    }
+
+    private fun onVideo(e: VideoRecordEvent, name: String) {
+        when (e) {
+            is VideoRecordEvent.Start -> state.started()
+            is VideoRecordEvent.Status -> state.recorded = e.recordingStats.recordedDurationNanos / 1_000_000_000
+            is VideoRecordEvent.Finalize -> {
+                if (state.sound) sound.play(MediaActionSound.STOP_VIDEO_RECORDING)
+                if (!e.hasError() || e.error == VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE)
+                    state.saved(Shot(0, e.outputResults.outputUri.toString(), name, Mode.VIDEO, System.currentTimeMillis(), e.recordingStats.recordedDurationNanos / 1_000_000_000))
+                else state.failed()
             }
         }
     }
 
-    fun release() { recording?.stop(); sound.release(); work.shutdown() }
+    fun release() { recording?.stop(); sound.release(); beep?.release(); work.shutdown() }
 }

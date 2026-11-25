@@ -1,5 +1,6 @@
 package com.zirakusa.camara.ui.screens
 
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.runtime.produceState
@@ -76,7 +77,7 @@ internal val Red = Color(0xFFFF453A)
         if (state.grid) Thirds()
         if (state.scene == Scene.DOCUMENT) DocumentFrame()
         if (state.flashBlink) Box(Modifier.fillMaxSize().background(Color(0xAAFFFFFF)))
-        state.countdown?.let { Text("$it", Modifier.align(Alignment.Center), color = White, fontSize = 120.sp, fontWeight = FontWeight.Light) }
+        state.countdown?.let { Countdown(it, state.countdownFrom, Modifier.align(Alignment.Center)) }
         hint(state)?.let { Text(stringResource(it), Modifier.align(Alignment.TopCenter).padding(12.dp).clip(RoundedCornerShape(8.dp)).background(Glass)
             .padding(horizontal = 12.dp, vertical = 6.dp), color = White, fontSize = 14.sp) }
     }
@@ -85,7 +86,7 @@ internal val Red = Color(0xFFFF453A)
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         if (state.panel == Panel.NONE) {
             if (state.scene == Scene.PRO) ProPanel(state)
-            if (state.scene == Scene.PORTRAIT) Focals(state) else ZoomPill(state)
+            if (state.scene == Scene.PORTRAIT) Focals(state) else if (state.scene != Scene.DUAL) ZoomPill(state)
         }
         when (state.panel) {
             Panel.QUICK -> QuickRow(state)
@@ -112,6 +113,18 @@ private fun hint(state: CamaraState): Int? = when {
     state.scene == Scene.DOCUMENT -> R.string.document_hint
     else -> null
 }
+
+/** The self-timer: the seconds left, big, inside a ring that fills as they pass, and how to cancel. */
+@Composable private fun Countdown(left: Int, from: Int, modifier: Modifier) =
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Box(Modifier.size(190.dp), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator({ if (from <= 0) 0f else (from - left + 1).toFloat() / from }, Modifier.fillMaxSize(), color = White,
+                strokeWidth = 6.dp, trackColor = Color(0x44FFFFFF))
+            Text("$left", color = White, fontSize = 110.sp, fontWeight = FontWeight.Light)
+        }
+        Text(stringResource(R.string.countdown_cancel), Modifier.clip(RoundedCornerShape(8.dp)).background(Glass).padding(horizontal = 12.dp, vertical = 6.dp),
+            color = White, fontSize = 14.sp)
+    }
 
 /**
  * The last photo or video, small, like the phone's own camera: its picture as soon as it is saved (a ▶ on videos), or the
