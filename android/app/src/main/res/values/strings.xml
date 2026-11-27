@@ -29,7 +29,7 @@
     <string name="mcp_status_off">Apagado</string>
     <string name="hub_link_permission">Vincular con Gateway Hub</string>
     <string name="summary_permission">Resumen para Inicio</string>
-    <string name="mcp_settings_hint">Lo controla Arka: activarlo, permitirlo en local y crear tokens.</string>
+    <string name="mcp_settings_hint">Configura el acceso local y la redirección a Hub.</string>
     <string name="allow_text">Para hacer fotos y videos, permite la cámara y el micrófono (solo para el sonido de los videos). Todo se guarda en tu galería, en DCIM/Camera.</string>
     <string name="allow">Permitir</string>
     <string name="no_app">No hay una app para esto</string>
@@ -119,5 +119,5 @@
     <string name="icon_cute">Dulce</string>
     <string name="icon_hint">Cambia el icono de la pantalla de inicio. Algunos lanzadores tardan unos segundos en mostrarlo.</string>
     <string name="act_permission">Órdenes de la familia (Lucía)</string>
-    <string name="mcp_no_arka">Instala Arka para activar el Modo MCP.</string>
+    <string name="mcp_no_arka">Instala Arka para administrar los enlaces del Hub.</string>
 </resources>

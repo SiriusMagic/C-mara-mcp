@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import com.zirakusa.camara.data.Mode
 import com.zirakusa.camara.data.SharedValues
 import com.zirakusa.camara.mcp.McpMode
+import com.zirakusa.camara.mcp.showMcpOptions
 import com.zirakusa.camara.ui.AppActions
 import com.zirakusa.camara.ui.CamaraApp
 import com.zirakusa.camara.ui.CamaraState
@@ -156,11 +157,7 @@ class MainActivity : ComponentActivity() {
         }
 
 
-    /** «Modo MCP» in Ajustes: it is turned on, allowed on the phone and given tokens in Arka, so this opens Arka. */
-    private fun openArka() {
-        val open = packageManager.getLaunchIntentForPackage("com.zirakusa.gatewayhub")
-        if (open != null) startActivity(open) else Toast.makeText(this, R.string.mcp_no_arka, Toast.LENGTH_LONG).show()
-    }
+    private fun openArka() = showMcpOptions(this)
 
     companion object { const val LUMA = "app.luma.gallery"; const val CAPTURE = "com.zirakusa.family.action.CAPTURE" }
 }

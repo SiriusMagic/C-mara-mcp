@@ -72,7 +72,7 @@ import com.zirakusa.camara.ui.theme.CamaraColors
         Caption(stringResource(R.string.mcp_title))
         Group {
             val status = when {
-                !McpMode.remote -> stringResource(R.string.mcp_status_off)
+                !McpMode.active -> stringResource(R.string.mcp_status_off)
                 McpMode.state == RelayLink.State.ONLINE -> stringResource(R.string.mcp_online)
                 McpMode.state == RelayLink.State.CONNECTING -> stringResource(R.string.mcp_connecting)
                 else -> stringResource(R.string.mcp_offline)
